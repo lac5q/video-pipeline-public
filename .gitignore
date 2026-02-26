@@ -1,0 +1,21 @@
+# Assets (too large for git)
+*.mp4
+*.mov
+*.mp3
+*.aac
+*.wav
+
+# Temp build dirs
+tmp_*/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
