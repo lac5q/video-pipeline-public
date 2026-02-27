@@ -29,6 +29,9 @@
   "product_showcase_order": "default",
   "reaction_label": "Real customer reaction",
   "font": "/System/Library/Fonts/HelveticaNeue.ttc",
-  "drive_folder_ids": {},
+  "drive_folder_ids": {
+    "video_pipeline": "1KgOKqNi_1NS-fbPbGBU4Q7Wk4M5ZnH9h",
+    "tracker_sheet": "1StfyNFIN1l0Uh53YCWDOJQcOD2BKFuq4rWU9Eg9VFcc"
+  },
   "oms_app": "makemejedibuyonce"
 }

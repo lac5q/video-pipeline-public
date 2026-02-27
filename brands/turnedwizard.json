@@ -29,6 +29,9 @@
   "product_showcase_order": "default",
   "reaction_label": "Real customer reaction",
   "font": "/System/Library/Fonts/HelveticaNeue.ttc",
-  "drive_folder_ids": {},
+  "drive_folder_ids": {
+    "video_pipeline": "1QzfbPIijlDoUqZLUzceQbcldZvUEPzw4",
+    "tracker_sheet": "1yjgom1ecNo7S0TYp0vzac0FQtJzJz25Ld37uts8jbsw"
+  },
   "oms_app": "turnedwizardmanage"
 }

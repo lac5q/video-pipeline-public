@@ -31,6 +31,9 @@
   "product_showcase_order": "home_decor_first",
   "reaction_label": "Real customer reaction",
   "font": "/System/Library/Fonts/HelveticaNeue.ttc",
-  "drive_folder_ids": {},
+  "drive_folder_ids": {
+    "video_pipeline": "1YYeXES9IK1k0Tt-yWLb7U6_f7JwTLeJ-",
+    "tracker_sheet": "1CiHtUM679nN-Pjq_Z9aDaw6bvbK1g6VZjwwwHxDxgf4"
+  },
   "oms_app": null
 }

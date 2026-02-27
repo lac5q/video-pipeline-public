@@ -36,6 +36,9 @@
   "product_showcase_order": "default",
   "reaction_label": "Real customer reaction",
   "font": "/System/Library/Fonts/HelveticaNeue.ttc",
-  "drive_folder_ids": {},
+  "drive_folder_ids": {
+    "video_pipeline": "10eSvHerd0-7oaYOmulwqACVONVRDT_uO",
+    "tracker_sheet": "1B0ATlsp_bZpF7h6-1SpqnEbJJhFbYsh83mBmF7nbCp0"
+  },
   "oms_app": "turnedyellowordermanagement"
 }
