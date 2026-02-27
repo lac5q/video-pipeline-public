@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Every product in the video uses OMS-correct position parameters (450x450 apparel, orientation-aware wall art, rotated phone cases, front-view mugs) with no distortions
   4. All products in the video are Gemini-staged into lifestyle scenes -- no raw Printful mockups appear
   5. Video output meets spec (1080x1920 portrait, CRF 18, h264, 30fps, blurred background fill) and existing TY build scripts remain intact as backup
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Brand JSON configs (5 brands) and shared product catalog with OMS-correct parameters
+- [ ] 01-02-PLAN.md -- Parameterized pipeline scripts (produce-video.sh, build-video.sh, verify-video.sh)
+- [ ] 01-03-PLAN.md -- Regression test and visual verification against TY-133627 baseline
 
 ### Phase 2: Customer Consent System
 **Goal**: Customers receive branded consent requests and their approval status is tracked before any order enters video production
