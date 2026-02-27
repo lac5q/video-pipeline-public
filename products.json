@@ -1,0 +1,350 @@
+{
+  "products": [
+    {
+      "id": "framed_poster",
+      "label": "Framed Poster",
+      "provider": "printful",
+      "product_id": 2,
+      "variant_id": 4,
+      "placement": "default",
+      "fill_mode": "cover",
+      "orientation_aware": true,
+      "position_landscape": {
+        "area_width": 4800, "area_height": 3600,
+        "width": 4800, "height": 3600, "top": 0, "left": 0
+      },
+      "position_portrait": {
+        "area_width": 3600, "area_height": 4800,
+        "width": 3600, "height": 4800, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this framed artwork on a living room wall above a modern sofa. Warm natural lighting, contemporary interior design.",
+      "video_include": true,
+      "default_order": 1,
+      "home_decor_order": 2
+    },
+    {
+      "id": "canvas",
+      "label": "Canvas Print",
+      "provider": "printful",
+      "product_id": 3,
+      "variant_id": 5,
+      "variant_id_landscape": 7,
+      "placement": "default",
+      "fill_mode": "cover",
+      "orientation_aware": true,
+      "position_landscape": {
+        "area_width": 4800, "area_height": 3600,
+        "width": 4800, "height": 3600, "top": 0, "left": 0
+      },
+      "position_portrait": {
+        "area_width": 3600, "area_height": 4800,
+        "width": 3600, "height": 4800, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this canvas print on a bedroom wall above a nightstand with a plant. Soft ambient lighting, modern decor.",
+      "video_include": true,
+      "default_order": 2,
+      "home_decor_order": 1
+    },
+    {
+      "id": "poster",
+      "label": "Poster Print",
+      "provider": "printful",
+      "product_id": 1,
+      "variant_id": 2,
+      "placement": "default",
+      "fill_mode": "cover",
+      "orientation_aware": true,
+      "position_landscape": {
+        "area_width": 4800, "area_height": 3600,
+        "width": 4800, "height": 3600, "top": 0, "left": 0
+      },
+      "position_portrait": {
+        "area_width": 3600, "area_height": 4800,
+        "width": 3600, "height": 4800, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this unframed poster on a home office wall above a desk. Clean modern workspace, natural lighting.",
+      "video_include": true,
+      "default_order": 12,
+      "home_decor_order": 3
+    },
+    {
+      "id": "tshirt",
+      "label": "T-Shirt",
+      "provider": "printful",
+      "product_id": 71,
+      "variant_id": 4013,
+      "placement": "front",
+      "orientation_aware": false,
+      "option_groups": ["Wrinkled"],
+      "position": {
+        "area_width": 450, "area_height": 450,
+        "width": 450, "height": 450, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom printed t-shirt folded neatly on a wooden table in a boutique shop. Warm retail lighting.",
+      "video_include": true,
+      "default_order": 3,
+      "home_decor_order": 6
+    },
+    {
+      "id": "hoodie",
+      "label": "Hoodie",
+      "provider": "printful",
+      "product_id": 146,
+      "variant_id": 5524,
+      "placement": "front",
+      "orientation_aware": false,
+      "option_groups": ["On Hanger"],
+      "position": {
+        "area_width": 450, "area_height": 450,
+        "width": 450, "height": 450, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom hoodie on a hanger in a trendy retail store. Warm ambient lighting, wooden rack.",
+      "video_include": true,
+      "default_order": 4,
+      "home_decor_order": 7
+    },
+    {
+      "id": "sweatshirt",
+      "label": "Sweatshirt",
+      "provider": "printful",
+      "product_id": 145,
+      "variant_id": 5428,
+      "placement": "front",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 450, "area_height": 450,
+        "width": 450, "height": 450, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom sweatshirt neatly folded on a wooden shelf in a cozy clothing store. Soft warm lighting.",
+      "video_include": true,
+      "default_order": 5,
+      "home_decor_order": 8
+    },
+    {
+      "id": "tanktop",
+      "label": "Tank Top",
+      "provider": "printful",
+      "product_id": 248,
+      "variant_id": 8661,
+      "placement": "front",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 450, "area_height": 450,
+        "width": 450, "height": 450, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom tank top laid flat on a light wooden table in a summer shop. Bright natural lighting.",
+      "video_include": true,
+      "default_order": 6,
+      "home_decor_order": 9
+    },
+    {
+      "id": "mug",
+      "label": "Coffee Mug",
+      "provider": "printful",
+      "product_id": 19,
+      "variant_id": 1320,
+      "placement": "default",
+      "orientation_aware": false,
+      "options": ["Front view"],
+      "position": {
+        "area_width": 1550, "area_height": 1050,
+        "width": 1550, "height": 1050, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this custom coffee mug on a kitchen counter next to a breakfast setup. Morning sunlight, cozy kitchen.",
+      "video_include": true,
+      "default_order": 7,
+      "home_decor_order": 5
+    },
+    {
+      "id": "waterbottle",
+      "label": "Water Bottle",
+      "provider": "printful",
+      "product_id": 382,
+      "variant_id": 10798,
+      "placement": "default",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 2557, "area_height": 1582,
+        "width": 2557, "height": 1582, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this custom water bottle on a gym bench or outdoor hiking trail. Active lifestyle scene, natural lighting.",
+      "video_include": true,
+      "default_order": 8,
+      "home_decor_order": 10
+    },
+    {
+      "id": "iphone_case",
+      "label": "iPhone Case",
+      "provider": "printful",
+      "product_id": 181,
+      "variant_id": 10994,
+      "placement": "default",
+      "orientation_aware": false,
+      "requires_rotation": true,
+      "rotation_degrees": 270,
+      "rotation_note": "Landscape illustrations MUST be rotated 270 degrees before sending to Printful API",
+      "position": {
+        "area_width": 879, "area_height": 1830,
+        "width": 879, "height": 1830, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this custom phone case on a desk next to a coffee cup and laptop. Modern workspace, soft lighting.",
+      "video_include": true,
+      "default_order": 9,
+      "home_decor_order": 11
+    },
+    {
+      "id": "samsung_case",
+      "label": "Samsung Case",
+      "provider": "printful",
+      "product_id": 267,
+      "variant_id": 11347,
+      "placement": "default",
+      "orientation_aware": false,
+      "requires_rotation": true,
+      "rotation_degrees": 270,
+      "rotation_note": "Landscape illustrations MUST be rotated 270 degrees before sending to Printful API",
+      "position": {
+        "area_width": 936, "area_height": 1950,
+        "width": 936, "height": 1950, "top": 0, "left": 0
+      },
+      "staging_prompt": "Place this custom phone case on a coffee table next to a book. Minimalist interior, warm lighting.",
+      "video_include": false,
+      "default_order": null,
+      "home_decor_order": null,
+      "_note": "Typically excluded from videos to avoid duplicate phone cases. Use iphone_case instead."
+    },
+    {
+      "id": "totebag",
+      "label": "Tote Bag",
+      "provider": "printful",
+      "product_id": 367,
+      "variant_id": 10458,
+      "placement": "front",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 1500, "area_height": 1500,
+        "width": 1500, "height": 1500, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom tote bag hanging on a wooden hook by a front door. Natural daylight, casual home entryway.",
+      "video_include": true,
+      "default_order": 10,
+      "home_decor_order": 12
+    },
+    {
+      "id": "sticker",
+      "label": "Sticker",
+      "provider": "printful",
+      "product_id": 358,
+      "variant_id": 10163,
+      "placement": "default",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 1275, "area_height": 1275,
+        "width": 1275, "height": 1275, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom sticker on a laptop lid in a coffee shop. Casual creative workspace.",
+      "video_include": false,
+      "default_order": null,
+      "home_decor_order": null
+    },
+    {
+      "id": "puzzle",
+      "label": "Puzzle",
+      "provider": "printful",
+      "product_id": 534,
+      "variant_id": 13431,
+      "placement": "default",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 4200, "area_height": 3300,
+        "width": 4200, "height": 3300, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom puzzle partially assembled on a dining table. Cozy family game night scene.",
+      "video_include": false,
+      "default_order": null,
+      "home_decor_order": null
+    },
+    {
+      "id": "greeting_card",
+      "label": "Greeting Card",
+      "provider": "printful",
+      "product_id": 568,
+      "variant_id": 14457,
+      "placement": "front",
+      "orientation_aware": false,
+      "position": {
+        "area_width": 1842, "area_height": 1240,
+        "width": 1842, "height": 1240, "top": 0, "left": 0
+      },
+      "staging_prompt": "Show this custom greeting card standing open on a desk with flowers nearby. Warm personal touch.",
+      "video_include": false,
+      "default_order": null,
+      "home_decor_order": null
+    },
+    {
+      "id": "blanket",
+      "label": "Throw Blanket",
+      "provider": "gooten",
+      "gooten_sku": "Blanket-Velveteen-Single-FinishedEdge-50x60",
+      "gooten_template": "Single",
+      "gooten_space_id": "FrontImage",
+      "gooten_layer_id": "Design",
+      "fill_mode": "MAXFIT",
+      "orientation_aware": false,
+      "staging_prompt": "Show this custom throw blanket draped flat on a bed in a cozy bedroom. Soft warm lighting, plush pillows nearby. The blanket must be draped flat on a bed, never standing upright.",
+      "video_include": true,
+      "default_order": 11,
+      "home_decor_order": 4
+    },
+    {
+      "id": "ornament",
+      "label": "Acrylic Ornament",
+      "provider": "gooten",
+      "gooten_sku": "AcrylicOrnaments-Rectangle-Single",
+      "gooten_template": "Single",
+      "gooten_space_id": "6BF16",
+      "gooten_layer_id": "19605",
+      "fill_mode": "MAXFIT",
+      "gooten_crop": {
+        "X1": 677, "X2": 3152,
+        "Y1": 72, "Y2": 1227
+      },
+      "orientation_aware": false,
+      "staging_prompt": "Show this rectangular acrylic ornament hanging on a Christmas tree branch. Festive holiday scene, warm bokeh lights.",
+      "video_include": false,
+      "default_order": null,
+      "home_decor_order": null,
+      "_note": "Rectangular acrylic ornament, NOT circular. Not typically included in standard videos."
+    }
+  ],
+  "showcase_orders": {
+    "default": [
+      "framed_poster",
+      "canvas",
+      "tshirt",
+      "hoodie",
+      "sweatshirt",
+      "tanktop",
+      "mug",
+      "waterbottle",
+      "iphone_case",
+      "totebag",
+      "blanket",
+      "poster"
+    ],
+    "home_decor_first": [
+      "canvas",
+      "framed_poster",
+      "poster",
+      "blanket",
+      "mug",
+      "tshirt",
+      "hoodie",
+      "sweatshirt",
+      "tanktop",
+      "waterbottle",
+      "iphone_case",
+      "totebag"
+    ]
+  }
+}

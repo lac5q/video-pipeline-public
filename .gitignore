@@ -27,6 +27,13 @@ __pycache__/
 *.pyc
 .venv/
 
+# Per-order temp build files
+orders/*/tmp_*
+
 # Environment
 .env
 .env.local
+
+# Ensure brand configs and product catalog are tracked (not ignored)
+!brands/*.json
+!products.json
