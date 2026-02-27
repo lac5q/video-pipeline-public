@@ -1,0 +1,41 @@
+{
+  "name": "TurnedYellow",
+  "slug": "turnedyellow",
+  "url": "TurnedYellow.com",
+  "tagline": "Your Photo. Your Style. Your Products.",
+  "style_description": "Hand-illustrated, one-of-a-kind",
+  "colors": {
+    "background": "#1a1a2e",
+    "accent": "#FF8C00",
+    "hook_accent": "#FFD700",
+    "label_brand": "rgba(255,200,100,0.9)"
+  },
+  "logo": {
+    "file": "turnedyellow-white.png",
+    "width": 600
+  },
+  "cta": {
+    "line1": "Shop our collections",
+    "line2_url": "TurnedYellow.com",
+    "line3_tagline": "Hand-illustrated, one-of-a-kind"
+  },
+  "hook_templates": [
+    {
+      "beat1": "this is what happens",
+      "beat2": "when a customer\nopens our gift"
+    },
+    {
+      "beat1": "you'll find no other gift",
+      "beat2": "that makes them\nlaugh like this"
+    }
+  ],
+  "music_pool": [
+    "Tobu - Candyland [Privated NCS Release].mp3",
+    "Ehrling - Dance With Me.mp3"
+  ],
+  "product_showcase_order": "default",
+  "reaction_label": "Real customer reaction",
+  "font": "/System/Library/Fonts/HelveticaNeue.ttc",
+  "drive_folder_ids": {},
+  "oms_app": "turnedyellowordermanagement"
+}

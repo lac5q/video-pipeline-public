@@ -1,0 +1,34 @@
+{
+  "name": "TurnedWizard",
+  "slug": "turnedwizard",
+  "url": "TurnedWizard.com",
+  "tagline": "Your portrait, conjured in magic",
+  "style_description": "Wizard-style illustration art",
+  "colors": {
+    "background": "#1A0030",
+    "accent": "#9B59B6",
+    "hook_accent": "#FFD700",
+    "label_brand": "#FFD700"
+  },
+  "logo": {
+    "file": "turnedwizard-white.png",
+    "width": 500
+  },
+  "cta": {
+    "line1": "Get your wizard portrait",
+    "line2_url": "TurnedWizard.com",
+    "line3_tagline": "Your portrait, conjured in magic"
+  },
+  "hook_templates": [
+    {
+      "beat1": "Your Hogwarts portrait",
+      "beat2": "just arrived"
+    }
+  ],
+  "music_pool": [],
+  "product_showcase_order": "default",
+  "reaction_label": "Real customer reaction",
+  "font": "/System/Library/Fonts/HelveticaNeue.ttc",
+  "drive_folder_ids": {},
+  "oms_app": "turnedwizardmanage"
+}

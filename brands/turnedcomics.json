@@ -1,0 +1,36 @@
+{
+  "_placeholder": true,
+  "_note": "PLACEHOLDER CONFIG -- values are best-guess estimates. Luis to review and update colors, tagline, hook templates, and music pool.",
+  "name": "TurnedComics",
+  "slug": "turnedcomics",
+  "url": "TurnedComics.com",
+  "tagline": "Your photo, comic-style",
+  "style_description": "Comic book illustration art",
+  "colors": {
+    "background": "#1a1a2e",
+    "accent": "#E63946",
+    "hook_accent": "#FFBE0B",
+    "label_brand": "#FFBE0B"
+  },
+  "logo": {
+    "file": "turnedcomics-white.png",
+    "width": 500
+  },
+  "cta": {
+    "line1": "Get your comic portrait",
+    "line2_url": "TurnedComics.com",
+    "line3_tagline": "Your photo, comic-style"
+  },
+  "hook_templates": [
+    {
+      "beat1": "this is what happens",
+      "beat2": "when you go comic-style"
+    }
+  ],
+  "music_pool": [],
+  "product_showcase_order": "default",
+  "reaction_label": "Real customer reaction",
+  "font": "/System/Library/Fonts/HelveticaNeue.ttc",
+  "drive_folder_ids": {},
+  "oms_app": "turnedcomicsmanage"
+}

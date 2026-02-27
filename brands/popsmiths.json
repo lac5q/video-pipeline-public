@@ -1,0 +1,36 @@
+{
+  "_placeholder": true,
+  "_note": "PLACEHOLDER CONFIG -- values are best-guess estimates. Luis to review and update colors, tagline, hook templates, and music pool.",
+  "name": "PopSmiths",
+  "slug": "popsmiths",
+  "url": "PopSmiths.com",
+  "tagline": "Art for your home",
+  "style_description": "Custom framed art and home decor",
+  "colors": {
+    "background": "#2C3E50",
+    "accent": "#E67E22",
+    "hook_accent": "#F39C12",
+    "label_brand": "#F39C12"
+  },
+  "logo": {
+    "file": "popsmiths-white.png",
+    "width": 500
+  },
+  "cta": {
+    "line1": "Discover your art",
+    "line2_url": "PopSmiths.com",
+    "line3_tagline": "Art for your home"
+  },
+  "hook_templates": [
+    {
+      "beat1": "custom art",
+      "beat2": "for your home"
+    }
+  ],
+  "music_pool": [],
+  "product_showcase_order": "home_decor_first",
+  "reaction_label": "Real customer reaction",
+  "font": "/System/Library/Fonts/HelveticaNeue.ttc",
+  "drive_folder_ids": {},
+  "oms_app": null
+}
