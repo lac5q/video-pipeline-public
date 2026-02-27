@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 1 of 4 (Brand Config and Pipeline Foundation)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-26 -- Roadmap created
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-02-27 -- Completed 01-01 (Brand Config and Product Catalog)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 8%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 3min
+- Total execution time: 0.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01 (3min)
+- Trend: Starting
 
 *Updated after each plan completion*
 
@@ -45,6 +45,10 @@ Recent decisions affecting current work:
 - [Roadmap]: 4-phase structure -- foundation, consent, production, automation (quick depth)
 - [Roadmap]: PopSmiths integrated in Phase 3 alongside shared-OMS brands (adapter pattern, not separate phase)
 - [Roadmap]: Quality safeguards (QUAL-01..05) placed in Phase 1 since they define correctness for all video output
+- [01-01]: Drive folder IDs as empty placeholders in brand config (not secret, can populate later)
+- [01-01]: TurnedComics and PopSmiths configs marked _placeholder for Luis review
+- [01-01]: Samsung case excluded from video showcase orders (category dedup with iPhone case)
+- [01-01]: Canvas has variant_id_landscape field for orientation-aware variant selection
 
 ### Pending Todos
 
@@ -58,6 +62,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26
-Stopped at: Roadmap created, ready for Phase 1 planning
+Last session: 2026-02-27
+Stopped at: Completed 01-01-PLAN.md (Brand Config and Product Catalog)
 Resume file: None

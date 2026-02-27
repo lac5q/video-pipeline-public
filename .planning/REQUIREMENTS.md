@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Brand System
 
-- [ ] **BRAND-01**: Brand config system with JSON configs (logo, accent color, CTA text, product catalog, music pool, tone) for all 5 brands (TY, MMJ, TW, TC, PopSmiths)
+- [x] **BRAND-01**: Brand config system with JSON configs (logo, accent color, CTA text, product catalog, music pool, tone) for all 5 brands (TY, MMJ, TW, TC, PopSmiths)
 - [ ] **BRAND-02**: Brand-aware video build -- parameterized ffmpeg scripts read brand config instead of hardcoded TY values
 - [ ] **BRAND-03**: OMS integration for shared-OMS brands (TY, MMJ, TW, TC) -- pull photos, illustrations, reaction videos per brand
 - [ ] **BRAND-04**: PopSmiths integration -- retrieve art from Heroku server, handle headless Shopify, stronger frame/product focus in video composition
@@ -35,10 +35,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Quality Safeguards
 
-- [ ] **QUAL-01**: Zero distortions -- every product uses OMS-correct position parameters (450x450 for apparel, orientation-aware for wall art, rotated for phone cases, front view for mug). Each product renders differently.
+- [x] **QUAL-01**: Zero distortions -- every product uses OMS-correct position parameters (450x450 for apparel, orientation-aware for wall art, rotated for phone cases, front view for mug). Each product renders differently.
 - [ ] **QUAL-02**: All products must be Gemini-staged into lifestyle scenes -- no raw Printful mockups in final video
-- [ ] **QUAL-03**: Maximum product showcase -- show as many of the order's products as possible in each video (currently 12-16)
-- [ ] **QUAL-04**: Preserve existing TY pipeline -- keep current working build scripts (build-ugc-v11.sh, build-ugc-v1.sh) intact as backup. New pipeline builds alongside, does not replace until proven.
+- [x] **QUAL-03**: Maximum product showcase -- show as many of the order's products as possible in each video (currently 12-16)
+- [x] **QUAL-04**: Preserve existing TY pipeline -- keep current working build scripts (build-ugc-v11.sh, build-ugc-v1.sh) intact as backup. New pipeline builds alongside, does not replace until proven.
 - [ ] **QUAL-05**: Video specs enforced -- 1080x1920 portrait, CRF 18, h264, 30fps, blurred background fill (no black bars, no stretching)
 
 ## v2 Requirements
@@ -81,7 +81,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRAND-01 | Phase 1 | Pending |
+| BRAND-01 | Phase 1 | Complete |
 | BRAND-02 | Phase 1 | Pending |
 | BRAND-03 | Phase 3 | Pending |
 | BRAND-04 | Phase 3 | Pending |
@@ -98,10 +98,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROD-05 | Phase 3 | Pending |
 | PROD-06 | Phase 3 | Pending |
 | PROD-07 | Phase 3 | Pending |
-| QUAL-01 | Phase 1 | Pending |
+| QUAL-01 | Phase 1 | Complete |
 | QUAL-02 | Phase 1 | Pending |
-| QUAL-03 | Phase 1 | Pending |
-| QUAL-04 | Phase 1 | Pending |
+| QUAL-03 | Phase 1 | Complete |
+| QUAL-04 | Phase 1 | Complete |
 | QUAL-05 | Phase 1 | Pending |
 
 **Coverage:**
