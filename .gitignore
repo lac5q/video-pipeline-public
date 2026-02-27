@@ -1,9 +1,16 @@
-# Assets (too large for git)
+# Media files (too large for git)
 *.mp4
 *.mov
 *.mp3
 *.aac
 *.wav
+*.jpg
+*.jpeg
+*.png
+
+# Keep build scripts and JSON configs in orders/
+!orders/*/exports/*.sh
+!orders/*/*.json
 
 # Temp build dirs
 tmp_*/
@@ -19,3 +26,7 @@ node_modules/
 __pycache__/
 *.pyc
 .venv/
+
+# Environment
+.env
+.env.local

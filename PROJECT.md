@@ -9,21 +9,46 @@ and builds a polished video reel.
 ## Project Structure
 ```
 video-pipeline/
-  PROJECT.md                              — This file
+  PROJECT.md                              — This file (start here)
   requirements/
     video-requirements.md                 — Hard requirements (NEVER BREAK THESE)
   research/
     mockup-generation-research.md         — Deep analysis of OMS/Printful/Gooten/Popsmiths mockup generation
+  docs/
+    PIPELINE-GUIDE.md                     — Step-by-step guide for building ANY video from scratch
+    LESSONS-LEARNED.md                    — Every mistake and fix (READ BEFORE STARTING)
+    PRODUCT-CATALOG.md                    — Complete Printful/Gooten product API reference
+    MUSIC-LIBRARY.md                      — Available music tracks and licensing
+    DIRECTORY-STRUCTURE.md                — Per-order workspace layout and file naming conventions
   scripts/
-    remove-bg-and-composite.py            — rembg background removal + lifestyle compositing (legacy — see recipe below)
+    remove-bg-and-composite.py            — rembg background removal + lifestyle compositing (LEGACY — replaced by Gemini staging)
   orders/
+    {order_id}/
+      photos/                             — Customer photos (photo1.jpg, photo2.jpg, ...)
+      illustration.jpg                    — Customer illustration
+      {order_id}.mov                      — Reaction video (for UGC variant)
+      mockups/
+        v9_*.jpg                          — Printful/Gooten pixel-perfect mockups (source)
+        v11_*.png                         — Gemini-staged lifestyle mockups (final)
+      exports/
+        build-ugc-*.sh                    — Build script for this order
+        TY-{order_id}-ugc-*.mp4           — Final video files
+      tmp_ugc_*/                          — Temp build files (safe to delete after build)
     133627/exports/build-ugc-v11.sh       — TY-133627 UGC build (12 products, family portrait)
     130138/exports/build-ugc-v1.sh        — TY-130138 UGC build (12 products, couple portrait)
-  docs/
-    (future: guides, SOPs)
 ```
 
-## Pipeline Architecture (PROVEN — Luis approved 2026-02-26)
+## Getting Started -- READ THESE FIRST
+
+If you are building a video for the first time (or lost context), read in this order:
+
+1. **`docs/LESSONS-LEARNED.md`** -- Every mistake that was made, so you do not repeat them
+2. **`docs/PIPELINE-GUIDE.md`** -- Complete step-by-step guide for building any video
+3. **`docs/PRODUCT-CATALOG.md`** -- Exact Printful/Gooten API parameters for each product
+4. **`docs/DIRECTORY-STRUCTURE.md`** -- Where files go, naming conventions, what is safe to delete
+5. **`requirements/video-requirements.md`** -- Hard rules that must never be broken
+
+## Pipeline Architecture (PROVEN -- Luis approved 2026-02-26)
 
 ### Step 1: Generate Pixel-Perfect Mockups via Printful/Gooten API
 - **Printful API** with OMS-correct parameters:
