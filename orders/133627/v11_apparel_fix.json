@@ -1,0 +1,34 @@
+[
+    {
+        "mockup": "v9_tshirt.jpg",
+        "background": "bg_wooden_table.png",
+        "output": "v11_tshirt.png",
+        "scale": 1.0,
+        "position": "center",
+        "offset_y": -20
+    },
+    {
+        "mockup": "v9_hoodie.jpg",
+        "background": "bg_clothing_rack.png",
+        "output": "v11_hoodie.png",
+        "scale": 0.95,
+        "position": "center",
+        "offset_y": -10
+    },
+    {
+        "mockup": "v9_sweatshirt.jpg",
+        "background": "bg_desk_setup.png",
+        "output": "v11_sweatshirt.png",
+        "scale": 0.95,
+        "position": "center",
+        "offset_y": 20
+    },
+    {
+        "mockup": "v9_tanktop.jpg",
+        "background": "bg_summer_display.png",
+        "output": "v11_tanktop.png",
+        "scale": 0.95,
+        "position": "center",
+        "offset_y": 0
+    }
+]
