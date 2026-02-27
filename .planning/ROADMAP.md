@@ -12,7 +12,7 @@ This roadmap takes a proven single-brand video pipeline (TurnedYellow) and exten
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Brand Config and Pipeline Foundation** - Brand config system, path abstraction, and quality safeguards that all downstream work depends on
+- [x] **Phase 1: Brand Config and Pipeline Foundation** - Brand config system, path abstraction, and quality safeguards that all downstream work depends on
 - [ ] **Phase 2: Customer Consent System** - Branded consent emails, state tracking, batch approval, and link-based opt-in with thank-you coupons
 - [ ] **Phase 3: Multi-Brand Production Pipeline** - OMS and PopSmiths integration, UGC and standard reels for all brands, Drive upload, and API resilience
 - [ ] **Phase 4: Autonomous Daily Pipeline** - Gwen orchestrates the full daily pipeline with scheduling, checkpoints, and circuit breakers
@@ -32,9 +32,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 01-01-PLAN.md -- Brand JSON configs (5 brands) and shared product catalog with OMS-correct parameters
-- [ ] 01-02-PLAN.md -- Parameterized pipeline scripts (produce-video.sh, build-video.sh, verify-video.sh)
-- [ ] 01-03-PLAN.md -- Regression test and visual verification against TY-133627 baseline
+- [x] 01-01-PLAN.md -- Brand JSON configs (5 brands) and shared product catalog with OMS-correct parameters
+- [x] 01-02-PLAN.md -- Parameterized pipeline scripts (produce-video.sh, build-video.sh, verify-video.sh)
+- [x] 01-03-PLAN.md -- Regression test and visual verification against TY-133627 baseline
 
 ### Phase 2: Customer Consent System
 **Goal**: Customers receive branded consent requests and their approval status is tracked before any order enters video production
@@ -90,7 +90,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Brand Config and Pipeline Foundation | 0/3 | Not started | - |
+| 1. Brand Config and Pipeline Foundation | 3/3 | Complete | 2026-02-27 |
 | 2. Customer Consent System | 0/3 | Not started | - |
 | 3. Multi-Brand Production Pipeline | 0/3 | Not started | - |
 | 4. Autonomous Daily Pipeline | 0/1 | Not started | - |
