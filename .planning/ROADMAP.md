@@ -49,9 +49,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 02-01-PLAN.md -- Data foundation: install nodemailer, per-brand Shopify config, customer enrichment script, consent batch approval CLI
-- [ ] 02-02-PLAN.md -- Email template fixes (CTA, illustration, tone), Shopify GraphQL coupon upgrade, consent server landing page updates
-- [ ] 02-03-PLAN.md -- End-to-end smoke test and visual verification checkpoint
+- [x] 02-01-PLAN.md -- Data foundation: install nodemailer, per-brand Shopify config, customer enrichment script, consent batch approval CLI
+- [x] 02-02-PLAN.md -- Email template fixes (CTA, illustration, tone), Shopify GraphQL coupon upgrade, consent server landing page updates
+- [x] 02-03-PLAN.md -- End-to-end smoke test and visual verification checkpoint
 
 ### Phase 3: Multi-Brand Production Pipeline
 **Goal**: All five brands produce publishable UGC and standard reel videos end-to-end -- from order assets to Google Drive upload with social copy
