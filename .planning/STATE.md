@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 2 of 4 (Customer Consent System) -- In Progress
-Plan: 1 of 4 in current phase (02-01 complete)
+Plan: 3 of 4 in current phase (02-03 complete, awaiting Task 2 human verify)
 Status: Active
-Last activity: 2026-03-01 -- Completed 02-01 (Customer Data Enrichment and Consent Approval CLI)
+Last activity: 2026-03-01 -- Completed 02-03 Task 1 (Consent Flow Smoke Test); checkpoint:human-verify awaiting Luis
 
-Progress: [███░░░░░░░] 25% (Phase 2: 1/4 plans complete)
+Progress: [████░░░░░░] 37% (Phase 2: 3/4 plans complete)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [███░░░░░░░] 25% (Phase 2: 1/4 plans complete)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 10min | 3min |
-| 02 | 1 | 4min | 4min |
+| 02 | 3 | 11min | 4min |
 
 **Recent Trend:**
 - Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (4min), 02-01 (4min)
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [02-01]: shopify.access_token_env in brand config (not direct value) to keep secrets out of brand JSON
 - [02-01]: enrich-orders.js uses native https module (not axios/node-fetch) to match existing codebase pattern
 - [02-01]: approve-consent-candidates.js reads production_status=pending as candidate filter but never writes it
+- [02-03]: DB_PATH env var must be set before require('lib/consent') due to lazy-loaded cached DB handle
+- [02-03]: oms_url column not in lib/consent.js minimal schema -- test setup adds it via ALTER TABLE
+- [02-03]: Shopify/SMTP failures in consent server confirm route are non-fatal (correct behavior validated by test)
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-01-PLAN.md (Customer Data Enrichment and Consent Approval CLI)
+Stopped at: 02-03 Task 2 checkpoint:human-verify (visual confirmation of email/server pages needed)
 Resume file: None

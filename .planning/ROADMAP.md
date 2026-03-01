@@ -13,7 +13,7 @@ This roadmap takes a proven single-brand video pipeline (TurnedYellow) and exten
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Brand Config and Pipeline Foundation** - Brand config system, path abstraction, and quality safeguards that all downstream work depends on
-- [ ] **Phase 2: Customer Consent System** - Branded consent emails, state tracking, batch approval, and link-based opt-in with thank-you coupons
+- [x] **Phase 2: Customer Consent System** - Branded consent emails, state tracking, batch approval, and link-based opt-in with thank-you coupons (completed 2026-03-01)
 - [ ] **Phase 3: Multi-Brand Production Pipeline** - OMS and PopSmiths integration, UGC and standard reels for all brands, Drive upload, and API resilience
 - [ ] **Phase 4: Autonomous Daily Pipeline** - Gwen orchestrates the full daily pipeline with scheduling, checkpoints, and circuit breakers
 
@@ -91,6 +91,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Brand Config and Pipeline Foundation | 3/3 | Complete | 2026-02-27 |
-| 2. Customer Consent System | 2/3 | In Progress|  |
+| 2. Customer Consent System | 3/3 | Complete   | 2026-03-01 |
 | 3. Multi-Brand Production Pipeline | 0/3 | Not started | - |
 | 4. Autonomous Daily Pipeline | 0/1 | Not started | - |
