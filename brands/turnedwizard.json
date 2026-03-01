@@ -1,6 +1,10 @@
 {
   "name": "TurnedWizard",
   "slug": "turnedwizard",
+  "shopify": {
+    "store": "",
+    "access_token_env": "SHOPIFY_TOKEN_TURNEDWIZARD"
+  },
   "url": "TurnedWizard.com",
   "tagline": "Your portrait, conjured in magic",
   "style_description": "Wizard-style illustration art",

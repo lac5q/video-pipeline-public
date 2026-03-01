@@ -3,6 +3,10 @@
   "_note": "PLACEHOLDER CONFIG -- values are best-guess estimates. Luis to review and update colors, tagline, hook templates, and music pool.",
   "name": "TurnedComics",
   "slug": "turnedcomics",
+  "shopify": {
+    "store": "",
+    "access_token_env": "SHOPIFY_TOKEN_TURNEDCOMICS"
+  },
   "url": "TurnedComics.com",
   "tagline": "Your photo, comic-style",
   "style_description": "Comic book illustration art",

@@ -1,6 +1,10 @@
 {
   "name": "MakeMeJedi",
   "slug": "makemejedi",
+  "shopify": {
+    "store": "",
+    "access_token_env": "SHOPIFY_TOKEN_MAKEMEJEDI"
+  },
   "url": "MakeMeJedi.com",
   "tagline": "May the art be with you",
   "style_description": "Jedi-style illustration art",

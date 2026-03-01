@@ -1,6 +1,10 @@
 {
   "name": "TurnedYellow",
   "slug": "turnedyellow",
+  "shopify": {
+    "store": "",
+    "access_token_env": "SHOPIFY_TOKEN_TURNEDYELLOW"
+  },
   "url": "TurnedYellow.com",
   "tagline": "Your Photo. Your Style. Your Products.",
   "style_description": "Hand-illustrated, one-of-a-kind",

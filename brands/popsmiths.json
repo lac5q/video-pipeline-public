@@ -3,6 +3,10 @@
   "_note": "PLACEHOLDER CONFIG -- values are best-guess estimates. Luis to review and update colors, tagline, hook templates, and music pool.",
   "name": "PopSmiths",
   "slug": "popsmiths",
+  "shopify": {
+    "store": "",
+    "access_token_env": "SHOPIFY_TOKEN_POPSMITHS"
+  },
   "url": "PopSmiths.com",
   "tagline": "Art for your home",
   "style_description": "Custom framed art and home decor",
