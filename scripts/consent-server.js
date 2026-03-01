@@ -315,7 +315,7 @@ app.get('/consent/:token/confirm', async (req, res) => {
 });
 
 // GET /consent/:token/decline -- mark as declined
-app.get('/consent/:token/decline', (req, res) => {
+app.get('/consent/:token/decline', async (req, res) => {
   const tokenData = consent.validateConsentToken(req.params.token);
 
   if (!tokenData) {
@@ -345,13 +345,31 @@ app.get('/consent/:token/decline', (req, res) => {
 
     const config = getBrandConfig(tokenData.brand);
 
+    // Offer a small "just for being a customer" discount -- re-engagement, no pressure
+    let discountCode = `THANKYOU-${tokenData.orderId.slice(-6).toUpperCase()}`;
+    try {
+      const shopifyDiscount = await createShopifyDiscount(
+        tokenData.brand,
+        discountCode,
+        10
+      );
+      if (shopifyDiscount && shopifyDiscount.code) discountCode = shopifyDiscount.code;
+    } catch (_err) {
+      // Non-fatal -- show the code anyway, handle manually if needed
+    }
+
     return res.send(
       brandedPage(tokenData.brand, 'No Problem', `
-        <h1>No problem at all!</h1>
-        <p>We completely understand and respect your decision.</p>
-        <p>Thank you for being a <strong>${config.name}</strong> customer -- we hope you love your order!</p>
-        <p style="text-align: center; margin-top: 24px;">
-          <a href="https://${config.url}" class="btn">Visit ${config.name}</a>
+        <h1>Totally understood.</h1>
+        <p>Your art is yours — no hard feelings at all.</p>
+        <p>It's been a while since your order, and we just wanted to say: we're glad you found us. If you ever feel like ordering again, here's a little something on us.</p>
+        <div style="background: ${config.colors.background}; padding: 20px; border-radius: 8px; text-align: center; margin: 24px 0;">
+          <p style="color: rgba(255,255,255,0.7); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">A Gift, Just for You</p>
+          <p style="color: ${config.colors.accent}; font-size: 26px; font-weight: 800; letter-spacing: 3px; font-family: monospace; margin: 0 0 8px 0;">${discountCode}</p>
+          <p style="color: #fff; font-size: 14px; margin: 0;">10% off your next order</p>
+        </div>
+        <p style="text-align: center; margin-top: 8px;">
+          <a href="https://${config.url}" class="btn">See what's new at ${config.name}</a>
         </p>
       `)
     );
