@@ -39,5 +39,7 @@
     "video_pipeline": "1YYeXES9IK1k0Tt-yWLb7U6_f7JwTLeJ-",
     "tracker_sheet": "1CiHtUM679nN-Pjq_Z9aDaw6bvbK1g6VZjwwwHxDxgf4"
   },
-  "oms_app": null
+  "oms_app": null,
+  "heroku_app": "popsmiths-art",
+  "heroku_api_url": "https://popsmiths-art.herokuapp.com"
 }
