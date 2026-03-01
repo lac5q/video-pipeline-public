@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Web Dashboard
-status: defining_requirements
-last_updated: "2026-03-01T13:30:00.000Z"
+status: roadmap_created
+last_updated: "2026-03-01T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Any approved customer order from any brand becomes a publishable video without manual intervention
-**Current focus:** v2.0 Web Dashboard — visual control surface for order approval, video review, consent management, and pipeline control
+**Current focus:** v2.0 Web Dashboard — Phase 5: Dashboard Foundation (ready to plan)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 0 of 4 (roadmap created, planning not yet started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-01 — Milestone v2.0 Web Dashboard started
+Status: Ready to plan Phase 5
+Last activity: 2026-03-01 — v2.0 roadmap created (phases 5-8, 26 requirements mapped)
 
-Progress: [----------] 0% (Roadmap not yet created)
+Progress: [----------] 0% (0/4 phases complete)
 
 ## Performance Metrics
 
@@ -52,22 +52,20 @@ Progress: [----------] 0% (Roadmap not yet created)
 ### Decisions (carried from v1.0)
 
 - [Roadmap]: 4-phase v1.0 structure -- foundation, consent, production, automation
-- [Roadmap]: PopSmiths integrated via adapter pattern (not separate phase)
 - [01-01]: Drive folder IDs as empty placeholders in brand config (populate later)
-- [01-02]: Build script supports dual invocation (args or env vars)
-- [01-03]: Regression test uses structural comparison (not pixel-level diff)
-- [02-01]: Per-brand Shopify tokens via env vars (SHOPIFY_TOKEN_{BRAND})
 - [02-03]: DB_PATH env var must be set before require('lib/consent')
 - [04-01]: Discord notifications non-fatal -- pipeline runs fine without webhook configured
-- [04-01]: Temp file approach for while-read loop to preserve counter variables
 
 ### v2.0 Decisions
 
-- [Milestone]: Web dashboard is v2.0 — was incorrectly scoped out in v1.0 setup
 - [Milestone]: Extend existing dashboard.js (1,198 lines) rather than greenfield rewrite
 - [Milestone]: Stack: Express + vanilla JS + SQLite (no framework migration)
 - [Milestone]: 5-lane stage-gate Kanban as primary view
 - [Milestone]: In-browser video player for review before Drive approval
+- [Roadmap]: Phase 5 groups DASH-01..05 + APPR-05 + DRIV-01..02 (board shell + metadata)
+- [Roadmap]: Phase 6 groups APPR-01..04 + UCONS-01..02 (inspect illustrations, dispatch consent)
+- [Roadmap]: Phase 7 groups UCONS-03..04 + PIPE-01..04 (live status + pipeline control)
+- [Roadmap]: Phase 8 groups VID-01..04 + COPY-01..02 (video review + social copy)
 
 ### Pending Todos
 
@@ -75,12 +73,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [v1.0 Research]: OpenClaw (Gwen's agent framework) in transition -- founder joined OpenAI Feb 2026. Monitor for breaking changes.
+- [v1.0 Research]: OpenClaw (Gwen's agent framework) in transition -- monitor for breaking changes.
 - [v1.0 Research]: Consent email deliverability needs SPF/DKIM/DMARC setup per brand domain.
-- [v1.0 Research]: TurnedComics hand-drawn art creates unique video composition needs.
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: v1.0 complete (all 4 phases). Starting v2.0 Web Dashboard milestone.
+Stopped at: v2.0 roadmap created. Next: /gsd:plan-phase 5
 Resume file: None

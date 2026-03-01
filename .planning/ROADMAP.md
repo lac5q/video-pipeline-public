@@ -1,10 +1,14 @@
 # Roadmap: Video Pipeline -- Multi-Brand Content Production System
 
-## Overview
+## Milestones
 
-This roadmap takes a proven single-brand video pipeline (TurnedYellow) and extends it to serve all five brands with automated customer consent, multi-brand production, and autonomous daily execution via Gwen. The path is: establish brand config and quality foundations, build the consent system (legal hard gate), connect all brands into end-to-end production, then hand the keys to Gwen for autonomous daily operation.
+- ✅ **v1.0 Core Pipeline** - Phases 1-4 (shipped 2026-03-01)
+- 🚧 **v2.0 Web Dashboard** - Phases 5-8 (in progress)
 
 ## Phases
+
+<details>
+<summary>✅ v1.0 Core Pipeline (Phases 1-4) - SHIPPED 2026-03-01</summary>
 
 **Phase Numbering:**
 - Integer phases (1, 2, 3): Planned milestone work
@@ -14,10 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Brand Config and Pipeline Foundation** - Brand config system, path abstraction, and quality safeguards that all downstream work depends on
 - [x] **Phase 2: Customer Consent System** - Branded consent emails, state tracking, batch approval, and link-based opt-in with thank-you coupons (completed 2026-03-01)
-- [ ] **Phase 3: Multi-Brand Production Pipeline** - OMS and PopSmiths integration, UGC and standard reels for all brands, Drive upload, and API resilience
+- [x] **Phase 3: Multi-Brand Production Pipeline** - OMS and PopSmiths integration, UGC and standard reels for all brands, Drive upload, and API resilience
 - [x] **Phase 4: Autonomous Daily Pipeline** - Gwen orchestrates the full daily pipeline with scheduling, checkpoints, and circuit breakers (completed 2026-03-01)
-
-## Phase Details
 
 ### Phase 1: Brand Config and Pipeline Foundation
 **Goal**: Any brand's config can drive a correct, quality-validated video build without hardcoded values
@@ -63,12 +65,12 @@ Plans:
   3. Order candidates are auto-ranked by a scoring algorithm (illustration quality, reaction video availability, product diversity, recency) and presented for selection
   4. Completed videos land in the correct brand folder on Google Drive (`/{Brand}/videos/{date}/`) with platform-specific social copy docs for YouTube, TikTok, Instagram, and X
   5. Gemini staging retries up to 3x with exponential backoff on failure, and Printful API calls respect rate limits during batch processing
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [x] 03-01: TBD
+- [x] 03-02: TBD
+- [x] 03-03: TBD
 
 ### Phase 4: Autonomous Daily Pipeline
 **Goal**: Gwen runs the full production pipeline daily with minimal human oversight -- picking up approved orders, producing videos, and uploading results
@@ -83,14 +85,104 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md -- Discord notifications, consecutive circuit breaker, checkpoint validation, dual video build, failed order tracking, run state persistence
 
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4
+## v1.0 Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Brand Config and Pipeline Foundation | 3/3 | Complete | 2026-02-27 |
-| 2. Customer Consent System | 3/3 | Complete    | 2026-03-01 |
+| 2. Customer Consent System | 3/3 | Complete | 2026-03-01 |
 | 3. Multi-Brand Production Pipeline | 3/3 | Complete | 2026-03-01 |
 | 4. Autonomous Daily Pipeline | 1/1 | Complete | 2026-03-01 |
+
+</details>
+
+---
+
+## 🚧 v2.0 Web Dashboard (In Progress)
+
+**Milestone Goal:** Give Luis a visual control surface to browse illustrations, approve candidates, preview videos, and manage the full pipeline without touching the terminal.
+
+**Phase Numbering continues from v1.0 (last phase was 4).**
+
+- [ ] **Phase 5: Dashboard Foundation** - Stage-gate board shell, brand/status filter presets, per-lane order count badges, order slide-over detail panel, Drive links and upload status, and per-order ranking signals
+- [ ] **Phase 6: Illustration Approval and Consent Dispatch** - Illustration thumbnail grid with zoom, per-order approve/reject and batch-approve, consent candidate list with preview, and consent batch send from dashboard
+- [ ] **Phase 7: Consent Tracking and Pipeline Control** - Real-time consent status per order, resend consent, pipeline trigger button, live progress stream, run summary, and run history
+- [ ] **Phase 8: Video Review and Social Copy** - In-browser video player with approve/reject controls, dual UGC/standard reel review, social copy panel per platform, and clipboard copy
+
+## v2.0 Phase Details
+
+### Phase 5: Dashboard Foundation
+**Goal**: Luis can open the dashboard, see all orders organized by pipeline stage across all brands, and instantly understand where every order sits and why
+**Depends on**: Phase 4 (extends existing dashboard.js Express server)
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, APPR-05, DRIV-01, DRIV-02
+**Success Criteria** (what must be TRUE):
+  1. User can open the dashboard and see all orders arranged in five lanes (Candidates, Consent Pending, Consent Approved, Video Built, Uploaded to Drive) with accurate order counts per lane
+  2. User can click a brand preset button (TurnedYellow, MakeMeJedi, TurnedWizard, TurnedComics, PopSmiths) and the board immediately filters to show only that brand's orders
+  3. User can click a consent status filter preset and the board narrows to only orders matching that consent state
+  4. User can click any order card to open a slide-over detail panel showing full order metadata (brand, customer, products, dates, ranking signals) without navigating away from the board
+  5. User can see the Google Drive folder link for each uploaded order in the detail panel and open it directly, and can see whether each order is uploaded, pending, or failed
+**Plans**: TBD
+
+Plans:
+- [ ] 05-01: TBD
+- [ ] 05-02: TBD
+
+### Phase 6: Illustration Approval and Consent Dispatch
+**Goal**: Luis can visually inspect illustration quality for all candidate orders and approve or reject them, then send the consent batch to approved candidates -- all without touching the terminal
+**Depends on**: Phase 5
+**Requirements**: APPR-01, APPR-02, APPR-03, APPR-04, UCONS-01, UCONS-02
+**Success Criteria** (what must be TRUE):
+  1. User can navigate to an illustration view and see a thumbnail grid of candidate orders, each showing the customer's illustration image
+  2. User can click an illustration thumbnail to zoom in and inspect image quality before making an approval decision
+  3. User can approve or reject a candidate order individually with a single click from the thumbnail grid
+  4. User can batch-approve all visible candidates in one action after confirming a prompt
+  5. User can see all consent candidates (approved by Luis but not yet emailed) in a list with illustration previews, select them, and send the consent email batch from the dashboard without using the CLI
+**Plans**: TBD
+
+Plans:
+- [ ] 06-01: TBD
+- [ ] 06-02: TBD
+
+### Phase 7: Consent Tracking and Pipeline Control
+**Goal**: Luis can monitor live consent responses and trigger the full production pipeline from the dashboard, watching it run in real time
+**Depends on**: Phase 6
+**Requirements**: UCONS-03, UCONS-04, PIPE-01, PIPE-02, PIPE-03, PIPE-04
+**Success Criteria** (what must be TRUE):
+  1. User can see real-time consent status per order (pending sent, email opened, approved, declined) that updates without a page refresh
+  2. User can resend the consent email to a specific order that declined or did not respond, with one click from the dashboard
+  3. User can trigger the daily pipeline run from the dashboard with one button and see stage-by-stage progress stream live as the pipeline runs (no page refresh)
+  4. User can see the current run summary (orders attempted, videos uploaded, failures) after a run completes
+  5. User can see a history of recent pipeline runs with outcome summaries to diagnose patterns or failures
+**Plans**: TBD
+
+Plans:
+- [ ] 07-01: TBD
+- [ ] 07-02: TBD
+
+### Phase 8: Video Review and Social Copy
+**Goal**: Luis can play, review, approve, or reject built videos directly in the browser and read social copy for any completed order without opening Drive
+**Depends on**: Phase 7
+**Requirements**: VID-01, VID-02, VID-03, VID-04, COPY-01, COPY-02
+**Success Criteria** (what must be TRUE):
+  1. User can play a built video directly in the browser without downloading it, using a native video player embedded in the dashboard
+  2. User can approve a reviewed video for Drive upload with one click from the video player, and can reject it (marking it failed, skipping Drive upload, keeping the record for audit)
+  3. User can review both the UGC reel and the standard reel for the same order independently -- switching between them in the same player view
+  4. User can open a social copy panel for any completed order and read the generated copy for all four platforms (YouTube, TikTok, Instagram, X)
+  5. User can copy any platform's social copy to clipboard with one click
+**Plans**: TBD
+
+Plans:
+- [ ] 08-01: TBD
+- [ ] 08-02: TBD
+
+## v2.0 Progress
+
+**Execution Order:**
+Phases execute in numeric order: 5 -> 6 -> 7 -> 8
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 5. Dashboard Foundation | v2.0 | 0/2 | Not started | - |
+| 6. Illustration Approval and Consent Dispatch | v2.0 | 0/2 | Not started | - |
+| 7. Consent Tracking and Pipeline Control | v2.0 | 0/2 | Not started | - |
+| 8. Video Review and Social Copy | v2.0 | 0/2 | Not started | - |

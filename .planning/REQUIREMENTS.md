@@ -161,42 +161,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-04 | Phase 1 | Complete |
 | QUAL-05 | Phase 1 | Complete |
 
-### v2.0 (Active — roadmap pending)
+### v2.0 (Active)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
-| APPR-01 | — | Pending |
-| APPR-02 | — | Pending |
-| APPR-03 | — | Pending |
-| APPR-04 | — | Pending |
-| APPR-05 | — | Pending |
-| VID-01 | — | Pending |
-| VID-02 | — | Pending |
-| VID-03 | — | Pending |
-| VID-04 | — | Pending |
-| UCONS-01 | — | Pending |
-| UCONS-02 | — | Pending |
-| UCONS-03 | — | Pending |
-| UCONS-04 | — | Pending |
-| PIPE-01 | — | Pending |
-| PIPE-02 | — | Pending |
-| PIPE-03 | — | Pending |
-| PIPE-04 | — | Pending |
-| COPY-01 | — | Pending |
-| COPY-02 | — | Pending |
-| DRIV-01 | — | Pending |
-| DRIV-02 | — | Pending |
+| DASH-01 | Phase 5 | Pending |
+| DASH-02 | Phase 5 | Pending |
+| DASH-03 | Phase 5 | Pending |
+| DASH-04 | Phase 5 | Pending |
+| DASH-05 | Phase 5 | Pending |
+| APPR-01 | Phase 6 | Pending |
+| APPR-02 | Phase 6 | Pending |
+| APPR-03 | Phase 6 | Pending |
+| APPR-04 | Phase 6 | Pending |
+| APPR-05 | Phase 5 | Pending |
+| VID-01 | Phase 8 | Pending |
+| VID-02 | Phase 8 | Pending |
+| VID-03 | Phase 8 | Pending |
+| VID-04 | Phase 8 | Pending |
+| UCONS-01 | Phase 6 | Pending |
+| UCONS-02 | Phase 6 | Pending |
+| UCONS-03 | Phase 7 | Pending |
+| UCONS-04 | Phase 7 | Pending |
+| PIPE-01 | Phase 7 | Pending |
+| PIPE-02 | Phase 7 | Pending |
+| PIPE-03 | Phase 7 | Pending |
+| PIPE-04 | Phase 7 | Pending |
+| COPY-01 | Phase 8 | Pending |
+| COPY-02 | Phase 8 | Pending |
+| DRIV-01 | Phase 5 | Pending |
+| DRIV-02 | Phase 5 | Pending |
 
 **v2.0 Coverage:**
 - v2.0 requirements: 26 total
-- Mapped to phases: 0 (roadmap not yet created)
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26 (roadmap complete)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-26*
-*Last updated: 2026-03-01 — v2.0 Web Dashboard requirements added*
+*Last updated: 2026-03-01 — v2.0 roadmap created, all 26 requirements mapped to phases 5-8*
