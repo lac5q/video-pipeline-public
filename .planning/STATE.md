@@ -1,42 +1,42 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-last_updated: "2026-03-01T12:54:00.000Z"
+milestone: v2.0
+milestone_name: Web Dashboard
+status: defining_requirements
+last_updated: "2026-03-01T13:30:00.000Z"
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-26)
+See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Any approved customer order from any brand becomes a publishable video without manual intervention
-**Current focus:** Phase 4 - Autonomous Daily Pipeline (COMPLETE)
+**Current focus:** v2.0 Web Dashboard — visual control surface for order approval, video review, consent management, and pipeline control
 
 ## Current Position
 
-Phase: 4 of 4 (Autonomous Daily Pipeline) -- COMPLETE
-Plan: 1 of 1 in current phase (all complete)
-Status: Phase complete
-Last activity: 2026-03-01 -- Completed 04-01 (autonomous daily pipeline with Discord, circuit breaker, checkpoints)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-01 — Milestone v2.0 Web Dashboard started
 
-Progress: [██████████] 100% (All phases complete)
+Progress: [----------] 0% (Roadmap not yet created)
 
 ## Performance Metrics
 
-**Velocity:**
-- Total plans completed: 3
-- Average duration: 3min
-- Total execution time: 0.2 hours
+**v1.0 Velocity (reference):**
+- Total plans completed: 10
+- Average duration: 4min
+- Total execution time: ~0.7 hours
 
-**By Phase:**
+**By Phase (v1.0):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
@@ -45,42 +45,29 @@ Progress: [██████████] 100% (All phases complete)
 | 03 | 3 | 12min | 4min |
 | 04 | 1 | 5min | 5min |
 
-**Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (4min), 02-01 (4min)
-- Trend: Consistent
-
-*Updated after each plan completion*
+*v2.0 metrics will be tracked once phases begin*
 
 ## Accumulated Context
 
-### Decisions
+### Decisions (carried from v1.0)
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [Roadmap]: 4-phase structure -- foundation, consent, production, automation (quick depth)
-- [Roadmap]: PopSmiths integrated in Phase 3 alongside shared-OMS brands (adapter pattern, not separate phase)
-- [Roadmap]: Quality safeguards (QUAL-01..05) placed in Phase 1 since they define correctness for all video output
-- [01-01]: Drive folder IDs as empty placeholders in brand config (not secret, can populate later)
-- [01-01]: TurnedComics and PopSmiths configs marked _placeholder for Luis review
-- [01-01]: Samsung case excluded from video showcase orders (category dedup with iPhone case)
-- [01-01]: Canvas has variant_id_landscape field for orientation-aware variant selection
-- [01-02]: Build script supports dual invocation (args or env vars) for flexibility
-- [01-02]: Photos discovered dynamically from workspace, not hardcoded names
-- [01-02]: Reels-only mode skips reaction, photos, and reaction audio entirely
-- [01-02]: Music randomly selected from brand pool at build time
-- [01-03]: Regression test uses structural comparison (duration, resolution, codec, fps) not pixel-level diff
-- [01-03]: Skipped full video build checks when staged assets not in expected paths (3 checks skipped)
-- [02-01]: Per-brand Shopify tokens via env vars (SHOPIFY_TOKEN_{BRAND}) rather than single shared token
-- [02-01]: shopify.access_token_env in brand config (not direct value) to keep secrets out of brand JSON
-- [02-01]: enrich-orders.js uses native https module (not axios/node-fetch) to match existing codebase pattern
-- [02-01]: approve-consent-candidates.js reads production_status=pending as candidate filter but never writes it
-- [02-03]: DB_PATH env var must be set before require('lib/consent') due to lazy-loaded cached DB handle
-- [02-03]: oms_url column not in lib/consent.js minimal schema -- test setup adds it via ALTER TABLE
-- [02-03]: Shopify/SMTP failures in consent server confirm route are non-fatal (correct behavior validated by test)
+- [Roadmap]: 4-phase v1.0 structure -- foundation, consent, production, automation
+- [Roadmap]: PopSmiths integrated via adapter pattern (not separate phase)
+- [01-01]: Drive folder IDs as empty placeholders in brand config (populate later)
+- [01-02]: Build script supports dual invocation (args or env vars)
+- [01-03]: Regression test uses structural comparison (not pixel-level diff)
+- [02-01]: Per-brand Shopify tokens via env vars (SHOPIFY_TOKEN_{BRAND})
+- [02-03]: DB_PATH env var must be set before require('lib/consent')
 - [04-01]: Discord notifications non-fatal -- pipeline runs fine without webhook configured
-- [04-01]: Temp file approach for while-read loop to preserve counter variables across subshell boundary
-- [04-01]: Heredoc for node DB updates to avoid nested quoting issues with datetime('now')
+- [04-01]: Temp file approach for while-read loop to preserve counter variables
+
+### v2.0 Decisions
+
+- [Milestone]: Web dashboard is v2.0 — was incorrectly scoped out in v1.0 setup
+- [Milestone]: Extend existing dashboard.js (1,198 lines) rather than greenfield rewrite
+- [Milestone]: Stack: Express + vanilla JS + SQLite (no framework migration)
+- [Milestone]: 5-lane stage-gate Kanban as primary view
+- [Milestone]: In-browser video player for review before Drive approval
 
 ### Pending Todos
 
@@ -88,12 +75,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research]: OpenClaw (Gwen's agent framework) in transition -- founder joined OpenAI Feb 2026. Monitor for breaking changes before Phase 4.
-- [Research]: Consent email deliverability needs SPF/DKIM/DMARC setup per brand domain -- address during Phase 2 planning.
-- [Research]: TurnedComics hand-drawn art creates unique video composition needs -- address during Phase 3.
+- [v1.0 Research]: OpenClaw (Gwen's agent framework) in transition -- founder joined OpenAI Feb 2026. Monitor for breaking changes.
+- [v1.0 Research]: Consent email deliverability needs SPF/DKIM/DMARC setup per brand domain.
+- [v1.0 Research]: TurnedComics hand-drawn art creates unique video composition needs.
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed Phase 4 (autonomous daily pipeline with Discord notifications, circuit breaker, checkpoint validation)
+Stopped at: v1.0 complete (all 4 phases). Starting v2.0 Web Dashboard milestone.
 Resume file: None
