@@ -104,7 +104,7 @@ Plans:
 
 **Phase Numbering continues from v1.0 (last phase was 4).**
 
-- [ ] **Phase 5: Dashboard Foundation** - Stage-gate board shell, brand/status filter presets, per-lane order count badges, order slide-over detail panel, Drive links and upload status, and per-order ranking signals
+- [x] **Phase 5: Dashboard Foundation** - Stage-gate board shell, brand/status filter presets, per-lane order count badges, order slide-over detail panel, Drive links and upload status, and per-order ranking signals (completed 2026-03-01)
 - [ ] **Phase 6: Illustration Approval and Consent Dispatch** - Illustration thumbnail grid with zoom, per-order approve/reject and batch-approve, consent candidate list with preview, and consent batch send from dashboard
 - [ ] **Phase 7: Consent Tracking and Pipeline Control** - Real-time consent status per order, resend consent, pipeline trigger button, live progress stream, run summary, and run history
 - [ ] **Phase 8: Video Review and Social Copy** - In-browser video player with approve/reject controls, dual UGC/standard reel review, social copy panel per platform, and clipboard copy
@@ -182,7 +182,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. Dashboard Foundation | v2.0 | 0/2 | Not started | - |
+| 5. Dashboard Foundation | v2.0 | Complete    | 2026-03-01 | - |
 | 6. Illustration Approval and Consent Dispatch | v2.0 | 0/2 | Not started | - |
 | 7. Consent Tracking and Pipeline Control | v2.0 | 0/2 | Not started | - |
 | 8. Video Review and Social Copy | v2.0 | 0/2 | Not started | - |
