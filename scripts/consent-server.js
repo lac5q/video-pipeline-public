@@ -299,7 +299,10 @@ app.get('/consent/:token/confirm', async (req, res) => {
           <p style="color: #fff; font-size: 14px; margin: 0;">${discountAmount} off your next order</p>
         </div>
         <p style="text-align: center; margin-top: 24px;">
-          <a href="https://${config.url}" class="btn">Visit ${config.name}</a>
+          <a href="https://${config.url}" class="btn">See what's new at ${config.name}</a>
+        </p>
+        <p style="text-align: center; color: #aaa; font-size: 14px; margin-top: 16px; line-height: 22px;">
+          Feel free to share yours too — we love seeing it out in the world.
         </p>
       `)
     );
