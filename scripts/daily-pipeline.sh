@@ -46,8 +46,8 @@ total_errors=0
 success_count=0
 skip_count=0
 orders_attempted=0
-declare -a ERROR_LIST=()
-declare -a FAILED_ORDERS=()
+ERROR_LIST=()
+FAILED_ORDERS=()
 
 # === Circuit Breaker ===
 circuit_breaker() {
@@ -75,10 +75,14 @@ send_discord_notification() {
 
     if [[ "$mode" == "circuit_breaker" ]]; then
         local errors_json
-        errors_json=$(printf '%s\n' "${ERROR_LIST[@]}" | node -e "
-            const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\n').filter(Boolean);
-            console.log(JSON.stringify(lines));
-        " 2>/dev/null || echo '[]')
+        if [[ $total_errors -gt 0 ]]; then
+            errors_json=$(printf '%s\n' "${ERROR_LIST[@]}" | node -e "
+                const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\n').filter(Boolean);
+                console.log(JSON.stringify(lines));
+            " 2>/dev/null || echo '[]')
+        else
+            errors_json='[]'
+        fi
 
         node -e "
             const {sendCircuitBreaker} = require('${PIPELINE_ROOT}/lib/discord');
@@ -86,10 +90,16 @@ send_discord_notification() {
         " 2>/dev/null || true
     else
         local is_cb="false"
+        local errors_arr='[]'
+        if [[ $total_errors -gt 0 ]]; then
+            errors_arr=$(printf '%s\n' "${ERROR_LIST[@]}" | node -e "
+                const lines = require('fs').readFileSync('/dev/stdin','utf8').trim().split('\n').filter(Boolean);
+                console.log(JSON.stringify(lines));
+            " 2>/dev/null || echo '[]')
+        fi
         node -e "
             const {sendDiscord, formatRunSummary} = require('${PIPELINE_ROOT}/lib/discord');
-            const errors = [];
-            $(for err in "${ERROR_LIST[@]}"; do echo "errors.push($(node -e "console.log(JSON.stringify('$err'))" 2>/dev/null || echo '""'));"; done)
+            const errors = ${errors_arr};
             const stats = {
                 runId: '${RUN_ID}',
                 brandsProcessed: '${brands_str}',
@@ -119,17 +129,15 @@ insert_run_record() {
 
 update_run_record() {
     local status="${1:-complete}"
-    local error_log
-    error_log=$(printf '%s\n' "${ERROR_LIST[@]}" 2>/dev/null | head -20 || echo "")
 
-    node -e "
-        const {getDatabase} = require('${PIPELINE_ROOT}/lib/db');
-        const db = getDatabase();
-        db.prepare(
-            'UPDATE daily_runs SET completed_at = datetime(\"now\"), status = ?, orders_attempted = ?, orders_succeeded = ?, orders_failed = ?, orders_skipped = ?, error_log = ?, discord_notified = 1 WHERE run_id = ?'
-        ).run('${status}', ${orders_attempted}, ${success_count}, ${total_errors}, ${skip_count}, $(node -e "console.log(JSON.stringify('${error_log}'))" 2>/dev/null || echo '""'), '${RUN_ID}');
-        db.close();
-    " 2>/dev/null || true
+    node --input-type=commonjs - <<NODEEOF 2>&1 || log "WARN" "Failed to update run record"
+const {getDatabase} = require('${PIPELINE_ROOT}/lib/db');
+const db = getDatabase();
+db.prepare(
+    "UPDATE daily_runs SET completed_at = datetime('now'), status = ?, orders_attempted = ?, orders_succeeded = ?, orders_failed = ?, orders_skipped = ?, discord_notified = 1 WHERE run_id = ?"
+).run('${status}', ${orders_attempted}, ${success_count}, ${total_errors}, ${skip_count}, '${RUN_ID}');
+db.close();
+NODEEOF
 }
 
 # === Failed Order DB Tracking ===
@@ -188,7 +196,7 @@ report_results() {
     log "INFO" "  Skipped:    ${skip_count}"
     log "INFO" "  Attempted:  ${orders_attempted}"
     log "INFO" "  Log:        ${LOG_FILE}"
-    if [[ ${#FAILED_ORDERS[@]} -gt 0 ]]; then
+    if [[ $total_errors -gt 0 ]]; then
         log "INFO" "  Failed orders:"
         for fo in "${FAILED_ORDERS[@]}"; do
             log "INFO" "    - ${fo}"
@@ -389,12 +397,16 @@ for BRAND in $BRANDS; do
 
     log "INFO" "Found ${CANDIDATE_COUNT} candidates for ${BRAND}"
 
-    # Process each candidate
+    # Extract order IDs into a temp file to avoid subshell from pipe
+    ORDER_IDS_FILE=$(mktemp)
     echo "$CANDIDATES" | node -e "
         const data = require('fs').readFileSync('/dev/stdin','utf8');
         const orders = JSON.parse(data);
         orders.forEach(o => console.log(o.order_id));
-    " | while read -r ORDER_ID; do
+    " > "$ORDER_IDS_FILE"
+
+    # Process each candidate (read from file, not pipe, to keep variable scope)
+    while read -r ORDER_ID; do
         circuit_breaker
 
         log "INFO" "--- Order: ${BRAND}/${ORDER_ID} ---"
@@ -603,7 +615,8 @@ for BRAND in $BRANDS; do
             mark_order_complete "$ORDER_ID" "$BRAND" "$PRIMARY_OUTPUT"
             log "INFO" "COMPLETED: ${BRAND}/${ORDER_ID}"
         fi
-    done
+    done < "$ORDER_IDS_FILE"
+    rm -f "$ORDER_IDS_FILE"
 done
 
 # === Final Report ===
