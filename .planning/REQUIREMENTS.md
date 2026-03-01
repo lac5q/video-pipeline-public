@@ -18,8 +18,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Consent & Permissions
 
 - [x] **CONS-01**: Customer consent request emails -- branded templates per brand with clear opt-in language and brand identity
-- [ ] **CONS-02**: Consent state tracking -- pending/approved/denied/revoked per order per brand, persists across restarts (SQLite or JSON)
-- [ ] **CONS-03**: Batch approval workflow -- system suggests order candidates, Luis approves/rejects batch via CLI
+- [x] **CONS-02**: Consent state tracking -- pending/approved/denied/revoked per order per brand, persists across restarts (SQLite or JSON)
+- [x] **CONS-03**: Batch approval workflow -- system suggests order candidates, Luis approves/rejects batch via CLI
 - [x] **CONS-04**: Link-based opt-in -- customer clicks approval link in email, consent status auto-updates to approved
 - [x] **CONS-05**: Thank-you coupon on consent -- generate or assign Shopify discount code when customer opts in (single shared code or per-customer unique code)
 
@@ -87,8 +87,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRAND-04 | Phase 3 | Pending |
 | BRAND-05 | Phase 1 | Complete |
 | CONS-01 | Phase 2 | Complete |
-| CONS-02 | Phase 2 | Pending |
-| CONS-03 | Phase 2 | Pending |
+| CONS-02 | Phase 2 | Complete |
+| CONS-03 | Phase 2 | Complete |
 | CONS-04 | Phase 2 | Complete |
 | CONS-05 | Phase 2 | Complete |
 | PROD-01 | Phase 3 | Pending |

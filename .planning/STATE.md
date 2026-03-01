@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-27T08:24:47.748Z"
+last_updated: "2026-03-01T06:17:10Z"
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 4
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Any approved customer order from any brand becomes a publishable video without manual intervention
-**Current focus:** Phase 1 - Brand Config and Pipeline Foundation
+**Current focus:** Phase 2 - Customer Consent System
 
 ## Current Position
 
 Phase: 2 of 4 (Customer Consent System) -- In Progress
-Plan: 2 of 4 in current phase (02-02 complete)
+Plan: 1 of 4 in current phase (02-01 complete)
 Status: Active
-Last activity: 2026-03-01 -- Completed 02-02 (Consent Email & Server UX)
+Last activity: 2026-03-01 -- Completed 02-01 (Customer Data Enrichment and Consent Approval CLI)
 
-Progress: [█████░░░░░] 50% (Phase 2: 2/4 plans complete)
+Progress: [███░░░░░░░] 25% (Phase 2: 1/4 plans complete)
 
 ## Performance Metrics
 
@@ -41,9 +41,10 @@ Progress: [█████░░░░░] 50% (Phase 2: 2/4 plans complete)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 10min | 3min |
+| 02 | 1 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (4min)
+- Last 5 plans: 01-01 (3min), 01-02 (3min), 01-03 (4min), 02-01 (4min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -68,10 +69,10 @@ Recent decisions affecting current work:
 - [01-02]: Music randomly selected from brand pool at build time
 - [01-03]: Regression test uses structural comparison (duration, resolution, codec, fps) not pixel-level diff
 - [01-03]: Skipped full video build checks when staged assets not in expected paths (3 checks skipped)
-- [02-02]: Shopify coupon uses GraphQL discountCodeBasicCreate (not deprecated REST price_rules), percentage: 0.15 (decimal)
-- [02-02]: Shopify credentials per-brand via brand JSON config (shopify.store + shopify.access_token_env)
-- [02-02]: Coupon code shown immediately inline on thank-you page HTML (not deferred to email)
-- [02-02]: ILLUSTRATION_URL resolved from oms_url > illustration_id fallback > empty string
+- [02-01]: Per-brand Shopify tokens via env vars (SHOPIFY_TOKEN_{BRAND}) rather than single shared token
+- [02-01]: shopify.access_token_env in brand config (not direct value) to keep secrets out of brand JSON
+- [02-01]: enrich-orders.js uses native https module (not axios/node-fetch) to match existing codebase pattern
+- [02-01]: approve-consent-candidates.js reads production_status=pending as candidate filter but never writes it
 
 ### Pending Todos
 
@@ -86,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-02-PLAN.md (Consent Email & Server UX)
+Stopped at: Completed 02-01-PLAN.md (Customer Data Enrichment and Consent Approval CLI)
 Resume file: None
