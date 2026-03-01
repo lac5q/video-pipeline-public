@@ -697,6 +697,128 @@ const HTML = `<!DOCTYPE html>
   .panel-loading { color: var(--text-dim); padding: 2rem; text-align: center; }
   .drive-link { word-break: break-all; font-size: 0.82rem; }
 
+  /* ── Phase 6: Card action buttons ── */
+  .card-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border);
+  }
+  .btn-approve, .btn-reject {
+    flex: 1;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-approve { background: rgba(16,185,129,0.2); color: #10b981; }
+  .btn-approve:hover { background: rgba(16,185,129,0.35); }
+  .btn-reject  { background: rgba(239,68,68,0.2);  color: #ef4444; }
+  .btn-reject:hover  { background: rgba(239,68,68,0.35); }
+
+  /* ── Phase 6: Lane header CTA buttons ── */
+  .btn-batch-approve {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(99,102,241,0.2);
+    color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-batch-approve:hover { background: rgba(99,102,241,0.35); }
+  .btn-send-consent {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(245,158,11,0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-send-consent:hover { background: rgba(245,158,11,0.35); }
+  .btn-send-consent:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Phase 6: Lightbox overlay ── */
+  .lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 300;
+    display: none;
+    cursor: pointer;
+  }
+  .lightbox-backdrop.open { display: block; }
+  .lightbox {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 301;
+    display: none;
+  }
+  .lightbox.open { display: block; }
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: -2.25rem;
+    right: 0;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem;
+  }
+
+  /* ── Phase 6: Toast notifications ── */
+  #toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    max-width: 300px;
+    animation: toastIn 0.2s ease;
+    pointer-events: auto;
+  }
+  .toast-success { border-left: 3px solid var(--success); }
+  .toast-error   { border-left: 3px solid var(--danger); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* Loading/error states */
   .board-loading { padding: 3rem; text-align: center; color: var(--text-dim); font-size: 0.9rem; }
 </style>
@@ -741,6 +863,16 @@ const HTML = `<!DOCTYPE html>
     <div class="panel-loading">Select an order to view details.</div>
   </div>
 </div>
+
+<!-- Phase 6: Lightbox overlay -->
+<div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close" title="Close (Esc)">&#x2715;</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Illustration preview">
+</div>
+
+<!-- Phase 6: Toast container -->
+<div id="toast-container"></div>
 
 <script>
 // Constants
@@ -849,6 +981,12 @@ function renderCard(order, laneId) {
   var customerDisplay = esc(order.description ? order.description.split(' ')[0] : '-');
   var dateDisplay = esc(fmtDate(order.updated_at || order.created_at));
   var playIcon = showPlay ? '<span class="card-play">[play]</span>' : '';
+  var actionsHtml = laneId === 'candidates'
+    ? '<div class="card-actions">' +
+      '<button class="btn-approve" data-order-id="' + esc(order.order_id) + '" data-brand="' + esc(order.brand) + '">&#x2713; Approve</button>' +
+      '<button class="btn-reject" data-order-id="' + esc(order.order_id) + '" data-brand="' + esc(order.brand) + '">&#x2715; Reject</button>' +
+      '</div>'
+    : '';
 
   return '<div class="order-card" data-order-id="' + esc(order.order_id) + '" data-brand="' + esc(order.brand) + '">' +
     '<div class="card-top">' +
@@ -865,6 +1003,7 @@ function renderCard(order, laneId) {
     '<span class="card-score">' + score + 'pts</span>' +
     playIcon +
     '</div>' +
+    actionsHtml +
     '</div>';
 }
 
@@ -875,21 +1014,27 @@ function renderBoard(data) {
     var cards = laneData.orders.length > 0
       ? laneData.orders.map(function(o) { return renderCard(o, lane.id); }).join('')
       : '<div class="lane-empty">No orders here yet</div>';
+    // Phase 6: Lane-specific CTA buttons
+    var laneHeaderCta = '';
+    if (lane.id === 'candidates' && laneData.count > 0) {
+      var candidateRefs = JSON.stringify(laneData.orders.map(function(o) {
+        return { order_id: o.order_id, brand: o.brand };
+      })).replace(/'/g, '&#39;');
+      laneHeaderCta = '<button class="btn-batch-approve" data-refs=\'' + candidateRefs + '\' data-count="' + laneData.count + '">Approve All (' + laneData.count + ')</button>';
+    }
+    if (lane.id === 'consent_pending' && laneData.count > 0) {
+      laneHeaderCta = '<button class="btn-send-consent" data-count="' + laneData.count + '">Send Consent Emails</button>';
+    }
+
     return '<div class="lane" data-lane="' + lane.id + '" style="--lane-accent:' + lane.accent + '">' +
       '<div class="lane-header">' +
       '<span class="lane-title">' + esc(lane.label) + '</span>' +
       '<span class="lane-badge">' + laneData.count + '</span>' +
+      (laneHeaderCta ? '<div style="display:flex;justify-content:flex-end;flex:1;padding-left:0.4rem">' + laneHeaderCta + '</div>' : '') +
       '</div>' +
       '<div class="lane-body">' + cards + '</div>' +
       '</div>';
   }).join('');
-
-  // Re-attach card click handlers
-  board.querySelectorAll('.order-card').forEach(function(card) {
-    card.addEventListener('click', function() {
-      openPanel(card.dataset.orderId, card.dataset.brand);
-    });
-  });
 
   // Update nav
   var lastUpdated = document.getElementById('nav-last-updated');
@@ -963,6 +1108,119 @@ function closePanel() {
   document.getElementById('slide-backdrop').classList.remove('open');
 }
 
+// ── Phase 6: Toast notifications ──
+function showToast(msg, type) {
+  var container = document.getElementById('toast-container');
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + (type || 'success');
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  }, 2500);
+}
+
+// ── Phase 6: Lightbox ──
+function openLightbox(src) {
+  if (!src) return;
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+  document.getElementById('lightbox-backdrop').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-backdrop').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+// ── Phase 6: Approve single order ──
+function approveOrder(orderId, brand) {
+  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ production_status: 'approved' })
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('Approved \u2014 moving to Consent Pending', 'success');
+        fetchBoard();
+      } else {
+        showToast('Error approving order', 'error');
+      }
+    })
+    .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+}
+
+// ── Phase 6: Reject single order ──
+function rejectOrder(orderId, brand) {
+  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ production_status: 'rejected' })
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('Rejected and removed from candidates', 'success');
+        fetchBoard();
+      } else {
+        showToast('Error rejecting order', 'error');
+      }
+    })
+    .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+}
+
+// ── Phase 6: Batch approve all candidates ──
+function batchApproveAll(orders, count) {
+  if (!confirm('Approve ' + count + ' candidates? This will queue them for consent emails.')) return;
+  fetch('/api/batch/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orders: orders, production_status: 'approved' })
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.updated + ' orders approved', 'success');
+        fetchBoard();
+      } else {
+        showToast('Error in batch approve', 'error');
+      }
+    })
+    .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+}
+
+// ── Phase 6: Send consent email batch ──
+function sendConsentBatch(btn, count) {
+  if (!confirm('Send consent emails to ' + count + ' customers? This cannot be undone.')) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  fetch('/api/consent/send-batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        var msg = data.sent > 0
+          ? 'Consent emails sent to ' + data.sent + ' customers'
+          : 'No eligible orders found (check consent/production status)';
+        showToast(msg, 'success');
+        if (data.failed > 0) showToast(data.failed + ' emails failed to send', 'error');
+        fetchBoard();
+      } else {
+        showToast('Error sending consent emails', 'error');
+      }
+    })
+    .catch(function(err) { showToast('Error: ' + err.message, 'error'); })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Send Consent Emails';
+    });
+}
+
 function renderPanelContent(data) {
   var order = data.order || {};
   var consentLog = data.consentLog || [];
@@ -1032,6 +1290,64 @@ function renderPanelContent(data) {
 // Event listeners
 document.getElementById('panel-close').addEventListener('click', closePanel);
 document.getElementById('slide-backdrop').addEventListener('click', closePanel);
+
+// Phase 6: Lightbox event listeners
+document.getElementById('lightbox-backdrop').addEventListener('click', closeLightbox);
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeLightbox();
+    closePanel();
+  }
+});
+
+// Phase 6: Unified board event delegation
+// Handles: approve buttons, reject buttons, thumbnail lightbox, batch approve, send consent, card open
+document.getElementById('kanban-board').addEventListener('click', function(e) {
+  // Approve button — must check before card-click fallthrough
+  var approveBtn = e.target.closest('.btn-approve');
+  if (approveBtn) {
+    e.stopPropagation();
+    approveOrder(approveBtn.dataset.orderId, approveBtn.dataset.brand);
+    return;
+  }
+  // Reject button
+  var rejectBtn = e.target.closest('.btn-reject');
+  if (rejectBtn) {
+    e.stopPropagation();
+    rejectOrder(rejectBtn.dataset.orderId, rejectBtn.dataset.brand);
+    return;
+  }
+  // Thumbnail click → lightbox (not panel open)
+  var thumb = e.target.closest('.card-thumbnail');
+  if (thumb && thumb.src && thumb.src.indexOf('http') === 0) {
+    e.stopPropagation();
+    openLightbox(thumb.src);
+    return;
+  }
+  // Batch approve button in Candidates lane header
+  var batchBtn = e.target.closest('.btn-batch-approve');
+  if (batchBtn) {
+    try {
+      var refs = JSON.parse(batchBtn.dataset.refs || '[]');
+      var count = parseInt(batchBtn.dataset.count, 10) || 0;
+      batchApproveAll(refs, count);
+    } catch(_) { showToast('Error reading candidate list', 'error'); }
+    return;
+  }
+  // Send consent emails button in Consent Pending lane header
+  var sendBtn = e.target.closest('.btn-send-consent');
+  if (sendBtn) {
+    var sendCount = parseInt(sendBtn.dataset.count, 10) || 0;
+    sendConsentBatch(sendBtn, sendCount);
+    return;
+  }
+  // Card click → open detail panel (fallback)
+  var card = e.target.closest('.order-card');
+  if (card) {
+    openPanel(card.dataset.orderId, card.dataset.brand);
+  }
+});
 
 document.getElementById('brand-filters').addEventListener('click', function(e) {
   var btn = e.target.closest('.pill');
