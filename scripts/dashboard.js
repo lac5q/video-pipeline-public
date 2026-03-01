@@ -402,6 +402,7 @@ const HTML = `<!DOCTYPE html>
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
+    overflow-x: hidden;
   }
   a { color: var(--accent-hover); text-decoration: none; }
   a:hover { text-decoration: underline; }
@@ -417,837 +418,599 @@ const HTML = `<!DOCTYPE html>
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: 1rem;
   }
-  nav .logo {
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-right: 2rem;
-    color: var(--text);
-    cursor: pointer;
-  }
-  nav .nav-links { display: flex; gap: 0.25rem; }
-  nav .nav-links a {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    color: var(--text-dim);
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.15s;
-  }
-  nav .nav-links a:hover,
-  nav .nav-links a.active {
-    background: var(--bg-card);
-    color: var(--text);
-    text-decoration: none;
-  }
+  .nav-logo { font-weight: 700; font-size: 1.1rem; color: var(--text); white-space: nowrap; }
+  .nav-brand-indicator { color: var(--text-dim); font-size: 0.85rem; }
+  .nav-spacer { flex: 1; }
+  .nav-last-updated { color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
 
-  /* Main content */
-  .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* Cards */
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem;
-  }
-  .card h3 { font-size: 0.8rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-  .card .value { font-size: 2rem; font-weight: 700; }
-  .card .subtitle { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; }
-
-  /* Status badges */
-  .badge {
-    display: inline-block;
-    padding: 0.15rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-  .badge-pending { background: #78350f; color: #fbbf24; }
-  .badge-approved, .badge-pre_approved, .badge-complete { background: #064e3b; color: #6ee7b7; }
-  .badge-producing, .badge-building, .badge-downloading, .badge-staging, .badge-uploading { background: #1e3a5f; color: #93c5fd; }
-  .badge-rejected, .badge-denied, .badge-revoked, .badge-failed { background: #7f1d1d; color: #fca5a5; }
-
-  /* Tables */
-  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-  thead th {
-    background: #0d1117;
-    padding: 0.75rem 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    cursor: pointer;
-    user-select: none;
-  }
-  thead th:hover { color: var(--text); }
-  thead th.sorted-asc::after { content: ' \\25B2'; font-size: 0.65rem; }
-  thead th.sorted-desc::after { content: ' \\25BC'; font-size: 0.65rem; }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-  tbody tr:hover { background: var(--bg-card-hover); }
-  tbody td { padding: 0.6rem 0.75rem; white-space: nowrap; }
-  tbody td.wrap { white-space: normal; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-
-  /* Forms */
+  /* Filters */
   .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    align-items: center;
-  }
-  select, input[type="text"], input[type="number"], input[type="range"] {
-    background: var(--bg-input);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    outline: none;
-  }
-  select:focus, input:focus { border-color: var(--accent); }
-  label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 0.2rem; }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: #fff;
-  }
-  .btn-primary { background: var(--accent); }
-  .btn-primary:hover { background: var(--accent-hover); }
-  .btn-success { background: var(--success); }
-  .btn-success:hover { background: #059669; }
-  .btn-warning { background: var(--warning); color: #000; }
-  .btn-warning:hover { background: #d97706; }
-  .btn-danger { background: var(--danger); }
-  .btn-danger:hover { background: #dc2626; }
-  .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Pagination */
-  .pagination {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    justify-content: center;
-  }
-  .pagination button {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8rem;
-  }
-  .pagination button:hover:not(:disabled) { background: var(--bg-card-hover); }
-  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .pagination span { font-size: 0.85rem; color: var(--text-dim); }
-
-  /* Detail page */
-  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .detail-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
-  .detail-section h2 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--accent-hover); }
-  .detail-row { display: flex; padding: 0.35rem 0; border-bottom: 1px solid rgba(75,85,99,0.3); }
-  .detail-label { width: 160px; flex-shrink: 0; color: var(--text-dim); font-size: 0.85rem; }
-  .detail-value { font-size: 0.85rem; word-break: break-all; }
-  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
-
-  /* Score bar */
-  .score-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-input); width: 100%; max-width: 200px; }
-  .score-bar > div { height: 100%; }
-  .score-bar .seg-reaction { background: #8b5cf6; }
-  .score-bar .seg-product { background: #10b981; }
-  .score-bar .seg-layout { background: #3b82f6; }
-  .score-bar .seg-recency { background: #f59e0b; }
-  .score-bar .seg-tags { background: #ec4899; }
-  .score-bar .seg-hook { background: #ef4444; }
-
-  /* Toast notifications */
-  .toast-container { position: fixed; top: 70px; right: 1.5rem; z-index: 200; display: flex; flex-direction: column; gap: 0.5rem; }
-  .toast {
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    animation: slideIn 0.3s ease;
-    min-width: 250px;
-  }
-  .toast-success { background: #064e3b; border: 1px solid #10b981; color: #6ee7b7; }
-  .toast-error { background: #7f1d1d; border: 1px solid #ef4444; color: #fca5a5; }
-  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-  /* Status distribution */
-  .status-list { list-style: none; }
-  .status-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid rgba(75,85,99,0.3); }
-  .status-list li:last-child { border-bottom: none; }
-  .status-bar-bg { flex: 1; margin: 0 0.75rem; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
-  .status-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-
-  /* Checkbox column */
-  .cb-col { width: 30px; text-align: center; }
-  input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
-
-  /* Loading */
-  .loading { text-align: center; padding: 3rem; color: var(--text-dim); }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .cards { grid-template-columns: 1fr 1fr; }
-    .detail-grid { grid-template-columns: 1fr; }
-    .filters { flex-direction: column; }
-    nav { flex-wrap: wrap; height: auto; padding: 0.75rem; }
-    nav .nav-links { flex-wrap: wrap; }
-  }
-
-  /* Back link */
-  .back-link { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-dim); margin-bottom: 1rem; font-size: 0.85rem; cursor: pointer; }
-  .back-link:hover { color: var(--text); text-decoration: none; }
-
-  /* Batch bar */
-  .batch-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #0d1117;
-    border-top: 1px solid var(--accent);
     padding: 0.75rem 1.5rem;
-    display: none;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .filter-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .filter-label { font-size: 0.75rem; color: var(--text-dim); min-width: 80px; }
+  .pill {
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: var(--accent); color: var(--text); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Board */
+  .board-wrapper {
+    padding: 1rem 1.5rem;
+    overflow-x: auto;
+    min-height: calc(100vh - 56px - 100px);
+  }
+  .kanban-board {
+    display: flex;
+    gap: 1rem;
+    min-width: max-content;
+    align-items: flex-start;
+  }
+
+  /* Lane */
+  .lane {
+    width: 280px;
+    min-width: 280px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 160px);
+  }
+  .lane-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--lane-accent, var(--border));
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    z-index: 100;
+    flex-shrink: 0;
   }
-  .batch-bar.visible { display: flex; }
-  .batch-bar .info { font-size: 0.85rem; color: var(--text-dim); }
-  .batch-bar .info strong { color: var(--text); }
+  .lane-title { font-weight: 600; font-size: 0.9rem; }
+  .lane-badge {
+    background: var(--lane-accent, var(--border));
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    min-width: 24px;
+    text-align: center;
+  }
+  .lane-body {
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  .lane-empty {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 2rem 1rem;
+    font-style: italic;
+  }
+
+  /* Cards */
+  .order-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .order-card:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+  .card-top { display: flex; align-items: flex-start; gap: 0.5rem; }
+  .card-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--bg-input);
+    flex-shrink: 0;
+  }
+  .card-thumb-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    background: var(--bg-input);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .card-meta { flex: 1; min-width: 0; }
+  .card-order-id { font-size: 0.72rem; color: var(--text-dim); font-family: monospace; }
+  .card-brand { font-weight: 600; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-customer { font-size: 0.82rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .card-date { font-size: 0.72rem; color: var(--text-dim); }
+  .card-score { font-size: 0.72rem; font-weight: 600; color: var(--warning); }
+  .card-play { font-size: 0.9rem; color: var(--info); }
+
+  /* Consent status badges */
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-pre_approved { background: rgba(156,163,175,0.2); color: #9ca3af; }
+  .badge-pending      { background: rgba(245,158,11,0.2);  color: #f59e0b; }
+  .badge-approved     { background: rgba(16,185,129,0.2);  color: #10b981; }
+  .badge-rejected     { background: rgba(239,68,68,0.2);   color: #ef4444; }
+  .badge-uploaded     { background: rgba(139,92,246,0.2);  color: #8b5cf6; }
+  .badge-built        { background: rgba(59,130,246,0.2);  color: #3b82f6; }
+  .badge-pending-upload { background: rgba(156,163,175,0.2); color: #9ca3af; }
+  .badge-failed       { background: rgba(239,68,68,0.2);   color: #ef4444; }
+
+  /* Slide-over panel */
+  .slide-over-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+    display: none;
+  }
+  .slide-over-backdrop.open { display: block; }
+  .slide-over {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 440px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide-over.open { transform: translateX(0); }
+  .panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+  }
+  .panel-title { font-weight: 600; font-size: 1rem; }
+  .panel-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .panel-close:hover { background: var(--bg-card-hover); }
+  .panel-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; gap: 1.25rem; }
+  .panel-section { display: flex; flex-direction: column; gap: 0.5rem; }
+  .panel-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.35rem;
+  }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .detail-table td { padding: 0.3rem 0; vertical-align: top; }
+  .detail-table td:first-child { color: var(--text-dim); width: 45%; padding-right: 0.5rem; }
+  .panel-loading { color: var(--text-dim); padding: 2rem; text-align: center; }
+  .drive-link { word-break: break-all; font-size: 0.82rem; }
+
+  /* Loading/error states */
+  .board-loading { padding: 3rem; text-align: center; color: var(--text-dim); font-size: 0.9rem; }
 </style>
 </head>
 <body>
 
+<!-- Nav -->
 <nav>
-  <span class="logo" onclick="navigate('overview')">Video Pipeline</span>
-  <div class="nav-links">
-    <a href="#" data-page="overview" class="active" onclick="navigate('overview'); return false;">Overview</a>
-    <a href="#" data-page="orders" onclick="navigate('orders'); return false;">Orders</a>
-    <a href="#" data-page="pipeline" onclick="navigate('pipeline'); return false;">Pipeline</a>
-  </div>
+  <span class="nav-logo">Video Pipeline</span>
+  <span class="nav-brand-indicator" id="nav-brand-indicator"></span>
+  <span class="nav-spacer"></span>
+  <span class="nav-last-updated" id="nav-last-updated">Loading...</span>
 </nav>
 
-<div class="toast-container" id="toasts"></div>
-
-<div class="container">
-  <!-- ============ OVERVIEW PAGE ============ -->
-  <div class="page active" id="page-overview">
-    <h1 style="margin-bottom:1.5rem; font-size:1.5rem;">Dashboard Overview</h1>
-    <div class="cards" id="overview-cards"></div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;" id="overview-grid">
-      <div class="detail-section">
-        <h2>Orders by Brand</h2>
-        <ul class="status-list" id="brand-list"></ul>
-      </div>
-      <div class="detail-section">
-        <h2>Production Status</h2>
-        <ul class="status-list" id="prod-status-list"></ul>
-      </div>
-      <div class="detail-section">
-        <h2>Consent Status</h2>
-        <ul class="status-list" id="consent-status-list"></ul>
-      </div>
-      <div class="detail-section">
-        <h2>Top 10 Candidates</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>#</th><th>Order ID</th><th>Brand</th><th>Score</th><th>Breakdown</th><th>Status</th></tr>
-            </thead>
-            <tbody id="top-candidates"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+<!-- Filters -->
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">Brand</span>
+    <div id="brand-filters" class="filter-row" style="flex:1; flex-wrap:wrap;"></div>
   </div>
-
-  <!-- ============ ORDERS PAGE ============ -->
-  <div class="page" id="page-orders">
-    <h1 style="margin-bottom:1rem; font-size:1.5rem;">Orders</h1>
-    <div class="filters" id="order-filters">
-      <div>
-        <label>Brand</label>
-        <select id="f-brand"><option value="">All Brands</option></select>
-      </div>
-      <div>
-        <label>Production Status</label>
-        <select id="f-status">
-          <option value="">All</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="producing">Producing</option>
-          <option value="complete">Complete</option>
-          <option value="rejected">Rejected</option>
-          <option value="failed">Failed</option>
-        </select>
-      </div>
-      <div>
-        <label>Consent Status</label>
-        <select id="f-consent">
-          <option value="">All</option>
-          <option value="pre_approved">Pre-approved</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="denied">Denied</option>
-          <option value="revoked">Revoked</option>
-        </select>
-      </div>
-      <div>
-        <label>Min Score: <span id="f-score-val">0</span></label>
-        <input type="range" id="f-score" min="0" max="5" step="1" value="0" oninput="document.getElementById('f-score-val').textContent=this.value">
-      </div>
-      <div>
-        <label>Search</label>
-        <input type="text" id="f-search" placeholder="Order ID, tags..." style="width:180px">
-      </div>
-      <div style="align-self:flex-end">
-        <button class="btn btn-primary" onclick="loadOrders(1)">Apply</button>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th class="cb-col"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
-            <th data-sort="order_id">Order ID</th>
-            <th data-sort="brand">Brand</th>
-            <th data-sort="score">Score</th>
-            <th>Computed</th>
-            <th data-sort="layout">Layout</th>
-            <th>Consent</th>
-            <th data-sort="production_status">Production</th>
-            <th>Video</th>
-            <th>Tags</th>
-            <th data-sort="updated_at">Updated</th>
-          </tr>
-        </thead>
-        <tbody id="orders-tbody"></tbody>
-      </table>
-    </div>
-    <div class="pagination" id="orders-pagination"></div>
-  </div>
-
-  <!-- ============ ORDER DETAIL PAGE ============ -->
-  <div class="page" id="page-detail">
-    <a class="back-link" onclick="navigate('orders'); return false;">&larr; Back to Orders</a>
-    <div id="detail-content"></div>
-  </div>
-
-  <!-- ============ PIPELINE PAGE ============ -->
-  <div class="page" id="page-pipeline">
-    <h1 style="margin-bottom:1.5rem; font-size:1.5rem;">Pipeline Runs</h1>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>ID</th><th>Order ID</th><th>Brand</th><th>Type</th><th>Status</th><th>Started</th><th>Completed</th><th>Error</th></tr>
-        </thead>
-        <tbody id="pipeline-tbody"></tbody>
-      </table>
-    </div>
-    <p id="pipeline-empty" class="loading" style="display:none">No production runs found.</p>
+  <div class="filter-row">
+    <span class="filter-label">Status</span>
+    <div id="status-filters" class="filter-row" style="flex:1; flex-wrap:wrap;"></div>
   </div>
 </div>
 
-<!-- Batch action bar -->
-<div class="batch-bar" id="batch-bar">
-  <div class="info"><strong id="batch-count">0</strong> orders selected</div>
-  <div style="display:flex; gap:0.5rem;">
-    <button class="btn btn-success btn-sm" onclick="batchAction('approved')">Approve</button>
-    <button class="btn btn-warning btn-sm" onclick="batchAction('producing')">Mark Producing</button>
-    <button class="btn btn-primary btn-sm" onclick="batchAction('complete')">Mark Complete</button>
-    <button class="btn btn-danger btn-sm" onclick="batchAction('rejected')">Reject</button>
+<!-- Board -->
+<div class="board-wrapper">
+  <div class="kanban-board" id="kanban-board">
+    <div class="board-loading">Loading board...</div>
+  </div>
+</div>
+
+<!-- Slide-over panel -->
+<div class="slide-over-backdrop" id="slide-backdrop"></div>
+<div class="slide-over" id="slide-over">
+  <div class="panel-header">
+    <span class="panel-title" id="panel-title">Order Detail</span>
+    <button class="panel-close" id="panel-close" title="Close">x</button>
+  </div>
+  <div class="panel-body" id="panel-body">
+    <div class="panel-loading">Select an order to view details.</div>
   </div>
 </div>
 
 <script>
-// =========================================================================
+// Constants
+var LANES = [
+  { id: 'candidates',       label: 'Candidates',        accent: '#6366f1' },
+  { id: 'consent_pending',  label: 'Consent Pending',   accent: '#f59e0b' },
+  { id: 'consent_approved', label: 'Consent Approved',  accent: '#10b981' },
+  { id: 'video_built',      label: 'Video Built',       accent: '#3b82f6' },
+  { id: 'uploaded',         label: 'Uploaded to Drive', accent: '#8b5cf6' },
+];
+
+var STATUS_PILLS = [
+  { label: 'All Statuses', value: null },
+  { label: 'Pre-Approved', value: 'pre_approved' },
+  { label: 'Pending',      value: 'pending' },
+  { label: 'Approved',     value: 'approved' },
+  { label: 'Built',        value: 'built' },
+  { label: 'Uploaded',     value: 'uploaded' },
+];
+
 // State
-// =========================================================================
-let currentPage = 'overview';
-let ordersState = { page: 1, sort: 'updated_at', dir: 'DESC', data: null };
-let selectedOrders = new Set(); // "orderId|brand" keys
-let statsCache = null;
+var state = {
+  brandFilter: null,
+  consentFilter: null,
+  brands: [],
+  pollTimer: null,
+};
 
-// =========================================================================
-// Navigation
-// =========================================================================
-function navigate(page, params) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-
-  const el = document.getElementById('page-' + page);
-  if (el) el.classList.add('active');
-  const navLink = document.querySelector('.nav-links a[data-page="' + page + '"]');
-  if (navLink) navLink.classList.add('active');
-
-  currentPage = page;
-
-  if (page === 'overview') loadOverview();
-  else if (page === 'orders') loadOrders();
-  else if (page === 'detail' && params) loadOrderDetail(params.orderId, params.brand);
-  else if (page === 'pipeline') loadPipeline();
+// Utilities
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-// =========================================================================
-// Toast
-// =========================================================================
-function toast(msg, type) {
-  type = type || 'success';
-  const el = document.createElement('div');
-  el.className = 'toast toast-' + type;
-  el.textContent = msg;
-  document.getElementById('toasts').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// =========================================================================
-// Overview
-// =========================================================================
-async function loadOverview() {
+function fmtDate(str) {
+  if (!str) return '-';
   try {
-    const res = await fetch('/api/stats');
-    const data = await res.json();
-    statsCache = data;
-
-    // Cards
-    const cardsHtml = '<div class="card"><h3>Total Orders</h3><div class="value">' + data.totalOrders + '</div></div>' +
-      data.byBrand.map(b =>
-        '<div class="card"><h3>' + esc(b.brand) + '</h3><div class="value">' + b.count + '</div><div class="subtitle">orders</div></div>'
-      ).join('');
-    document.getElementById('overview-cards').innerHTML = cardsHtml;
-
-    // Brand distribution
-    renderStatusList('brand-list', data.byBrand.map(b => ({ label: b.brand, count: b.count })), data.totalOrders, '#4f46e5');
-
-    // Production status
-    const prodColors = { pending: '#f59e0b', approved: '#10b981', producing: '#3b82f6', complete: '#6ee7b7', rejected: '#ef4444', failed: '#ef4444', downloading: '#93c5fd', staging: '#93c5fd', building: '#93c5fd', uploading: '#93c5fd' };
-    renderStatusList('prod-status-list', data.byProductionStatus.map(s => ({ label: s.production_status || 'null', count: s.count, color: prodColors[s.production_status] })), data.totalOrders);
-
-    // Consent status
-    const conColors = { pre_approved: '#6ee7b7', pending: '#f59e0b', approved: '#10b981', denied: '#ef4444', revoked: '#ef4444' };
-    renderStatusList('consent-status-list', data.byConsentStatus.map(s => ({ label: s.consent_status || 'null', count: s.count, color: conColors[s.consent_status] })), data.totalOrders);
-
-    // Top candidates
-    const tbody = document.getElementById('top-candidates');
-    if (data.topCandidates.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:1rem;">No scored candidates found</td></tr>';
-    } else {
-      tbody.innerHTML = data.topCandidates.map(c =>
-        '<tr style="cursor:pointer" onclick="navigate(\\'detail\\', {orderId:\\'' + esc(c.order_id) + '\\', brand:\\'' + esc(c.brand) + '\\'})"><td>' + c.rank + '</td><td>' + esc(c.order_id) + '</td><td>' + esc(c.brand) + '</td><td><strong>' + c.score + '</strong></td><td>' + scoreBar(c.breakdown) + '</td><td>' + badge(c.production_status) + '</td></tr>'
-      ).join('');
-    }
-
-    // Populate brand filter
-    const sel = document.getElementById('f-brand');
-    const existing = sel.querySelectorAll('option:not(:first-child)');
-    existing.forEach(o => o.remove());
-    data.brands.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.slug;
-      opt.textContent = b.name;
-      sel.appendChild(opt);
-    });
-  } catch (e) {
-    console.error('Failed to load overview', e);
-  }
+    return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch(e) { return str; }
 }
 
-function renderStatusList(elId, items, total, defaultColor) {
-  const el = document.getElementById(elId);
-  if (!items.length) { el.innerHTML = '<li style="color:var(--text-dim)">No data</li>'; return; }
-  el.innerHTML = items.map(s => {
-    const pct = total > 0 ? (s.count / total * 100) : 0;
-    const color = s.color || defaultColor || '#4f46e5';
-    return '<li><span style="min-width:100px">' + badge(s.label) + '</span><div class="status-bar-bg"><div class="status-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span style="min-width:40px;text-align:right;font-weight:600">' + s.count + '</span></li>';
+function consentBadge(status) {
+  var s = (status || 'unknown').toLowerCase().replace(/ /g, '_');
+  var labels = {
+    pre_approved: 'Pre-Approved',
+    pending: 'Pending',
+    approved: 'Approved',
+    rejected: 'Rejected',
+  };
+  return '<span class="badge badge-' + esc(s) + '">' + esc(labels[s] || status) + '</span>';
+}
+
+function uploadStatusBadge(order) {
+  var ps = (order.production_status || '').toLowerCase();
+  if (ps === 'uploaded' && order.drive_url) {
+    return '<span class="badge badge-uploaded">Uploaded</span>';
+  }
+  if (ps === 'failed') {
+    return '<span class="badge badge-failed">Failed</span>';
+  }
+  if (ps === 'built') {
+    return '<span class="badge badge-built">Built</span>';
+  }
+  return '<span class="badge badge-pending-upload">Pending</span>';
+}
+
+// Filter pills
+function renderBrandPills() {
+  var container = document.getElementById('brand-filters');
+  var brands = ['All Brands'].concat(state.brands.map(function(b) { return b.slug || b.name; }));
+  container.innerHTML = brands.map(function(brand) {
+    var isAll = brand === 'All Brands';
+    var active = isAll ? state.brandFilter === null : state.brandFilter === brand;
+    return '<button class="pill' + (active ? ' active' : '') + '" data-brand="' + (isAll ? '' : esc(brand)) + '">' + esc(brand) + '</button>';
   }).join('');
 }
 
-// =========================================================================
-// Orders Table
-// =========================================================================
-async function loadOrders(page) {
-  if (page) ordersState.page = page;
-  const brand = document.getElementById('f-brand').value;
-  const status = document.getElementById('f-status').value;
-  const consent = document.getElementById('f-consent').value;
-  const minScore = document.getElementById('f-score').value;
-  const search = document.getElementById('f-search').value;
+function renderStatusPills() {
+  var container = document.getElementById('status-filters');
+  container.innerHTML = STATUS_PILLS.map(function(pill) {
+    var active = state.consentFilter === pill.value;
+    return '<button class="pill' + (active ? ' active' : '') + '" data-status="' + esc(pill.value || '') + '">' + esc(pill.label) + '</button>';
+  }).join('');
+}
 
-  const params = new URLSearchParams({
-    page: ordersState.page,
-    limit: 25,
-    sort: ordersState.sort,
-    dir: ordersState.dir,
-  });
-  if (brand) params.set('brand', brand);
-  if (status) params.set('status', status);
-  if (consent) params.set('consent_status', consent);
-  if (minScore && minScore !== '0') params.set('min_score', minScore);
-  if (search) params.set('search', search);
+// Board rendering
+function renderCard(order, laneId) {
+  var showThumb = laneId === 'candidates';
+  var showPlay = laneId === 'video_built' || laneId === 'uploaded';
+  var score = order.computed_score || order.score || 0;
 
-  try {
-    const res = await fetch('/api/orders?' + params);
-    const data = await res.json();
-    ordersState.data = data;
-
-    const tbody = document.getElementById('orders-tbody');
-    if (data.orders.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:2rem;">No orders found</td></tr>';
+  var thumbHtml = '';
+  if (showThumb) {
+    if (order.photos_url) {
+      thumbHtml = '<img class="card-thumbnail" src="' + esc(order.photos_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">';
     } else {
-      tbody.innerHTML = data.orders.map(o => {
-        const key = o.order_id + '|' + o.brand;
-        const checked = selectedOrders.has(key) ? 'checked' : '';
-        let tagsStr = '';
-        try { const t = JSON.parse(o.tags || '[]'); tagsStr = Array.isArray(t) ? t.slice(0,3).join(', ') : String(o.tags||''); } catch(_) { tagsStr = String(o.tags||'').slice(0,30); }
-        const hasVideo = o.video_path ? 'Yes' : 'No';
-        const updated = o.updated_at ? o.updated_at.slice(0,16).replace('T',' ') : '-';
-
-        return '<tr>' +
-          '<td class="cb-col"><input type="checkbox" ' + checked + ' onchange="toggleSelect(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\', this.checked)"></td>' +
-          '<td><a href="#" onclick="navigate(\\'detail\\',{orderId:\\'' + esc(o.order_id) + '\\',brand:\\'' + esc(o.brand) + '\\'});return false;">' + esc(o.order_id) + '</a></td>' +
-          '<td>' + esc(o.brand) + '</td>' +
-          '<td>' + (o.score !== null ? o.score : '-') + '</td>' +
-          '<td><span title="' + o.computed_score + '">' + o.computed_score + '</span> ' + scoreBar(o.score_breakdown) + '</td>' +
-          '<td>' + esc(o.layout || '-') + '</td>' +
-          '<td>' + badge(o.consent_status) + '</td>' +
-          '<td>' + badge(o.production_status) + '</td>' +
-          '<td>' + hasVideo + '</td>' +
-          '<td class="wrap" title="' + esc(tagsStr) + '">' + esc(tagsStr.slice(0,40)) + '</td>' +
-          '<td>' + updated + '</td></tr>';
-      }).join('');
+      thumbHtml = '<div class="card-thumb-placeholder">[img]</div>';
     }
-
-    // Update sort indicators
-    document.querySelectorAll('#page-orders thead th[data-sort]').forEach(th => {
-      th.classList.remove('sorted-asc', 'sorted-desc');
-      if (th.dataset.sort === ordersState.sort) {
-        th.classList.add(ordersState.dir === 'ASC' ? 'sorted-asc' : 'sorted-desc');
-      }
-    });
-
-    // Pagination
-    renderPagination(data);
-    updateBatchBar();
-  } catch (e) {
-    console.error('Failed to load orders', e);
   }
-}
 
-function renderPagination(data) {
-  const el = document.getElementById('orders-pagination');
-  const prevDisabled = data.page <= 1 ? 'disabled' : '';
-  const nextDisabled = data.page >= data.pages ? 'disabled' : '';
-  el.innerHTML =
-    '<button ' + prevDisabled + ' onclick="loadOrders(' + (data.page - 1) + ')">Previous</button>' +
-    '<span>Page ' + data.page + ' of ' + data.pages + ' (' + data.total + ' total)</span>' +
-    '<button ' + nextDisabled + ' onclick="loadOrders(' + (data.page + 1) + ')">Next</button>';
-}
+  var brandDisplay = esc(order.brand || '-');
+  var customerDisplay = esc(order.description ? order.description.split(' ')[0] : '-');
+  var dateDisplay = esc(fmtDate(order.updated_at || order.created_at));
+  var playIcon = showPlay ? '<span class="card-play">[play]</span>' : '';
 
-// Sorting
-document.addEventListener('click', function(e) {
-  if (e.target.tagName === 'TH' && e.target.dataset.sort) {
-    const col = e.target.dataset.sort;
-    if (ordersState.sort === col) {
-      ordersState.dir = ordersState.dir === 'ASC' ? 'DESC' : 'ASC';
-    } else {
-      ordersState.sort = col;
-      ordersState.dir = 'DESC';
-    }
-    loadOrders(1);
-  }
-});
-
-// Enter key in search
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('f-search').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') loadOrders(1);
-  });
-});
-
-// =========================================================================
-// Selection / Batch
-// =========================================================================
-function toggleSelect(orderId, brand, checked) {
-  const key = orderId + '|' + brand;
-  if (checked) selectedOrders.add(key); else selectedOrders.delete(key);
-  updateBatchBar();
-}
-
-function toggleSelectAll(cb) {
-  if (!ordersState.data) return;
-  ordersState.data.orders.forEach(o => {
-    const key = o.order_id + '|' + o.brand;
-    if (cb.checked) selectedOrders.add(key); else selectedOrders.delete(key);
-  });
-  loadOrders(ordersState.page); // re-render
-}
-
-function updateBatchBar() {
-  const bar = document.getElementById('batch-bar');
-  const count = selectedOrders.size;
-  document.getElementById('batch-count').textContent = count;
-  if (count > 0) bar.classList.add('visible'); else bar.classList.remove('visible');
-}
-
-async function batchAction(productionStatus) {
-  if (selectedOrders.size === 0) return;
-  const orders = Array.from(selectedOrders).map(k => {
-    const [order_id, brand] = k.split('|');
-    return { order_id, brand };
-  });
-
-  try {
-    const res = await fetch('/api/batch/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orders, production_status: productionStatus }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      toast(data.updated + ' orders updated to ' + productionStatus);
-      selectedOrders.clear();
-      updateBatchBar();
-      loadOrders(ordersState.page);
-    } else {
-      toast(data.error || 'Batch update failed', 'error');
-    }
-  } catch (e) {
-    toast('Batch update failed: ' + e.message, 'error');
-  }
-}
-
-// =========================================================================
-// Order Detail
-// =========================================================================
-async function loadOrderDetail(orderId, brand) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-detail').classList.add('active');
-  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-
-  const el = document.getElementById('detail-content');
-  el.innerHTML = '<div class="loading">Loading...</div>';
-
-  try {
-    const res = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand));
-    if (!res.ok) { el.innerHTML = '<p>Order not found.</p>'; return; }
-    const data = await res.json();
-    const o = data.order;
-
-    let tagsStr = '';
-    try { const t = JSON.parse(o.tags || '[]'); tagsStr = Array.isArray(t) ? t.join(', ') : String(o.tags||''); } catch(_) { tagsStr = String(o.tags||''); }
-
-    const fields = [
-      ['Order ID', o.order_id],
-      ['Brand', o.brand],
-      ['Consent Status', badge(o.consent_status)],
-      ['Production Status', badge(o.production_status)],
-      ['Raw Score', o.score !== null ? o.score + '/5' : '-'],
-      ['Computed Score', '<strong>' + o.computed_score + '</strong>/100 ' + scoreBar(o.score_breakdown, true)],
-      ['Layout', o.layout || '-'],
-      ['Has Reaction Video', o.has_reaction_video ? 'Yes' : 'No'],
-      ['Reaction Video URL', o.reaction_video_url ? '<a href="' + esc(o.reaction_video_url) + '" target="_blank">' + esc(o.reaction_video_url).slice(0,60) + '</a>' : '-'],
-      ['Reaction Clips', [o.reaction_start, o.reaction_end, o.reaction_start2, o.reaction_end2].filter(Boolean).join(' / ') || '-'],
-      ['Photos URL', o.photos_url ? '<a href="' + esc(o.photos_url) + '" target="_blank">Link</a>' : '-'],
-      ['OMS URL', o.oms_url ? '<a href="' + esc(o.oms_url) + '" target="_blank">Link</a>' : '-'],
-      ['Illustration ID', o.illustration_id || '-'],
-      ['Tags', tagsStr || '-'],
-      ['Description', o.description || '-'],
-      ['Clear Product', o.clear_product ? 'Yes' : 'No'],
-      ['Source', o.source || '-'],
-      ['Holiday', o.holiday || '-'],
-      ['Video Path', o.video_path || '-'],
-      ['Drive URL', o.drive_url ? '<a href="' + esc(o.drive_url) + '" target="_blank">Link</a>' : '-'],
-      ['Created', o.created_at || '-'],
-      ['Updated', o.updated_at || '-'],
-    ];
-
-    let html = '<h1 style="margin-bottom:1rem;font-size:1.25rem;">Order: ' + esc(o.order_id) + ' <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem;">' + esc(o.brand) + '</span></h1>';
-
-    html += '<div class="detail-grid"><div>';
-    html += '<div class="detail-section"><h2>Order Details</h2>';
-    fields.forEach(f => {
-      html += '<div class="detail-row"><div class="detail-label">' + f[0] + '</div><div class="detail-value">' + (f[1] || '-') + '</div></div>';
-    });
-    html += '</div>';
-
-    // Actions
-    html += '<div class="detail-section"><h2>Actions</h2><div class="actions">';
-    html += '<button class="btn btn-success btn-sm" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',\\'approved\\',null)">Approve</button>';
-    html += '<button class="btn btn-danger btn-sm" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',\\'rejected\\',null)">Reject</button>';
-    html += '<button class="btn btn-warning btn-sm" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',\\'producing\\',null)">Mark Producing</button>';
-    html += '<button class="btn btn-primary btn-sm" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',\\'complete\\',null)">Mark Complete</button>';
-    html += '</div>';
-    html += '<div class="actions" style="margin-top:0.5rem;">';
-    html += '<button class="btn btn-sm" style="background:var(--bg-input)" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',null,\\'approved\\')">Consent: Approve</button>';
-    html += '<button class="btn btn-sm" style="background:var(--bg-input)" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',null,\\'denied\\')">Consent: Deny</button>';
-    html += '<button class="btn btn-sm" style="background:var(--bg-input)" onclick="updateOrderStatus(\\'' + esc(o.order_id) + '\\',\\'' + esc(o.brand) + '\\',null,\\'revoked\\')">Consent: Revoke</button>';
-    html += '</div></div>';
-    html += '</div><div>';
-
-    // Exports
-    html += '<div class="detail-section"><h2>Exports (' + data.exports.length + ')</h2>';
-    if (data.exports.length > 0) {
-      html += '<ul style="list-style:none;">';
-      data.exports.forEach(f => { html += '<li style="padding:0.3rem 0;font-size:0.85rem;color:var(--text-dim)">' + esc(f) + '</li>'; });
-      html += '</ul>';
-    } else {
-      html += '<p style="color:var(--text-dim);font-size:0.85rem;">No exported videos found.</p>';
-    }
-    html += '</div>';
-
-    // Mockups
-    html += '<div class="detail-section"><h2>Mockups</h2>';
-    html += '<p style="font-size:0.85rem;color:var(--text-dim);">' + data.mockupCount + ' mockup file(s)</p></div>';
-
-    // Consent log
-    html += '<div class="detail-section"><h2>Consent Log</h2>';
-    if (data.consentLog.length > 0) {
-      html += '<div class="table-wrap"><table><thead><tr><th>Action</th><th>Details</th><th>Time</th></tr></thead><tbody>';
-      data.consentLog.forEach(l => {
-        html += '<tr><td>' + badge(l.action) + '</td><td style="white-space:normal;max-width:250px;">' + esc(l.details || '-') + '</td><td>' + (l.timestamp || '-') + '</td></tr>';
-      });
-      html += '</tbody></table></div>';
-    } else {
-      html += '<p style="color:var(--text-dim);font-size:0.85rem;">No consent log entries.</p>';
-    }
-    html += '</div>';
-
-    // Production runs
-    html += '<div class="detail-section"><h2>Production Runs</h2>';
-    if (data.productionRuns.length > 0) {
-      html += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Started</th><th>Completed</th><th>Error</th></tr></thead><tbody>';
-      data.productionRuns.forEach(r => {
-        html += '<tr><td>' + esc(r.video_type || '-') + '</td><td>' + badge(r.status) + '</td><td>' + (r.started_at || '-') + '</td><td>' + (r.completed_at || '-') + '</td><td style="white-space:normal;max-width:200px;color:var(--danger)">' + esc(r.error || '') + '</td></tr>';
-      });
-      html += '</tbody></table></div>';
-    } else {
-      html += '<p style="color:var(--text-dim);font-size:0.85rem;">No production runs.</p>';
-    }
-    html += '</div>';
-
-    html += '</div></div>'; // close detail-grid
-
-    el.innerHTML = html;
-  } catch (e) {
-    el.innerHTML = '<p style="color:var(--danger)">Failed to load order: ' + esc(e.message) + '</p>';
-  }
-}
-
-async function updateOrderStatus(orderId, brand, productionStatus, consentStatus) {
-  const body = {};
-  if (productionStatus) body.production_status = productionStatus;
-  if (consentStatus) body.consent_status = consentStatus;
-
-  try {
-    const res = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (data.success) {
-      toast('Status updated successfully');
-      loadOrderDetail(orderId, brand);
-    } else {
-      toast(data.error || 'Update failed', 'error');
-    }
-  } catch (e) {
-    toast('Update failed: ' + e.message, 'error');
-  }
-}
-
-// =========================================================================
-// Pipeline
-// =========================================================================
-async function loadPipeline() {
-  try {
-    const res = await fetch('/api/production-runs');
-    const data = await res.json();
-    const tbody = document.getElementById('pipeline-tbody');
-    const emptyMsg = document.getElementById('pipeline-empty');
-
-    if (data.runs.length === 0) {
-      tbody.innerHTML = '';
-      emptyMsg.style.display = 'block';
-    } else {
-      emptyMsg.style.display = 'none';
-      tbody.innerHTML = data.runs.map(r =>
-        '<tr>' +
-        '<td>' + r.id + '</td>' +
-        '<td><a href="#" onclick="navigate(\\'detail\\',{orderId:\\'' + esc(r.order_id) + '\\',brand:\\'' + esc(r.brand) + '\\'});return false;">' + esc(r.order_id) + '</a></td>' +
-        '<td>' + esc(r.brand) + '</td>' +
-        '<td>' + esc(r.video_type || '-') + '</td>' +
-        '<td>' + badge(r.status) + '</td>' +
-        '<td>' + (r.started_at || '-') + '</td>' +
-        '<td>' + (r.completed_at || '-') + '</td>' +
-        '<td style="color:var(--danger);white-space:normal;max-width:300px;">' + esc(r.error || '') + '</td>' +
-        '</tr>'
-      ).join('');
-    }
-  } catch (e) {
-    console.error('Failed to load pipeline', e);
-  }
-}
-
-// =========================================================================
-// Helpers
-// =========================================================================
-function esc(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function badge(status) {
-  if (!status) return '<span class="badge">-</span>';
-  const cls = 'badge-' + String(status).toLowerCase().replace(/[^a-z_]/g, '');
-  return '<span class="badge ' + cls + '">' + esc(status) + '</span>';
-}
-
-function scoreBar(breakdown, wide) {
-  if (!breakdown) return '';
-  const max = 100;
-  const w = wide ? 'width:300px' : 'width:120px';
-  return '<div class="score-bar" style="display:inline-flex;vertical-align:middle;' + w + '" title="Reaction:' + breakdown.reaction + ' Product:' + breakdown.clearProduct + ' Layout:' + breakdown.layout + ' Recency:' + breakdown.recency + ' Tags:' + breakdown.tags + ' Hook:' + breakdown.hook + '">' +
-    '<div class="seg-reaction" style="width:' + (breakdown.reaction/max*100) + '%"></div>' +
-    '<div class="seg-product" style="width:' + (breakdown.clearProduct/max*100) + '%"></div>' +
-    '<div class="seg-layout" style="width:' + (breakdown.layout/max*100) + '%"></div>' +
-    '<div class="seg-recency" style="width:' + (breakdown.recency/max*100) + '%"></div>' +
-    '<div class="seg-tags" style="width:' + (breakdown.tags/max*100) + '%"></div>' +
-    '<div class="seg-hook" style="width:' + (breakdown.hook/max*100) + '%"></div>' +
+  return '<div class="order-card" data-order-id="' + esc(order.order_id) + '" data-brand="' + esc(order.brand) + '">' +
+    '<div class="card-top">' +
+    (showThumb ? thumbHtml : '') +
+    '<div class="card-meta">' +
+    '<div class="card-order-id">#' + esc(order.order_id) + '</div>' +
+    '<div class="card-brand">' + brandDisplay + '</div>' +
+    '<div class="card-customer">' + customerDisplay + '</div>' +
+    consentBadge(order.consent_status) +
+    '</div>' +
+    '</div>' +
+    '<div class="card-footer">' +
+    '<span class="card-date">' + dateDisplay + '</span>' +
+    '<span class="card-score">' + score + 'pts</span>' +
+    playIcon +
+    '</div>' +
     '</div>';
 }
 
-// =========================================================================
+function renderBoard(data) {
+  var board = document.getElementById('kanban-board');
+  board.innerHTML = LANES.map(function(lane) {
+    var laneData = (data.lanes && data.lanes[lane.id]) ? data.lanes[lane.id] : { orders: [], count: 0 };
+    var cards = laneData.orders.length > 0
+      ? laneData.orders.map(function(o) { return renderCard(o, lane.id); }).join('')
+      : '<div class="lane-empty">No orders here yet</div>';
+    return '<div class="lane" data-lane="' + lane.id + '" style="--lane-accent:' + lane.accent + '">' +
+      '<div class="lane-header">' +
+      '<span class="lane-title">' + esc(lane.label) + '</span>' +
+      '<span class="lane-badge">' + laneData.count + '</span>' +
+      '</div>' +
+      '<div class="lane-body">' + cards + '</div>' +
+      '</div>';
+  }).join('');
+
+  // Re-attach card click handlers
+  board.querySelectorAll('.order-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      openPanel(card.dataset.orderId, card.dataset.brand);
+    });
+  });
+
+  // Update nav
+  var lastUpdated = document.getElementById('nav-last-updated');
+  if (data.fetched_at) {
+    lastUpdated.textContent = 'Updated ' + fmtDate(data.fetched_at);
+  }
+}
+
+// Board fetch
+function fetchBoard() {
+  var params = new URLSearchParams();
+  if (state.brandFilter) params.set('brand', state.brandFilter);
+  if (state.consentFilter) params.set('consent_status', state.consentFilter);
+
+  fetch('/api/board?' + params.toString())
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      renderBoard(data);
+      var indicator = document.getElementById('nav-brand-indicator');
+      indicator.textContent = state.brandFilter ? '- ' + state.brandFilter : '';
+    })
+    .catch(function(err) {
+      console.error('Board fetch failed:', err);
+      document.getElementById('kanban-board').innerHTML =
+        '<div class="board-loading">Failed to load board. Check console.</div>';
+    });
+}
+
+// Brands fetch
+function fetchBrands() {
+  return fetch('/api/stats')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      state.brands = data.brands || [];
+      renderBrandPills();
+    })
+    .catch(function() {
+      state.brands = ['TurnedYellow','MakeMeJedi','TurnedWizard','TurnedComics','PopSmiths'].map(function(s) { return { slug: s, name: s }; });
+      renderBrandPills();
+    });
+}
+
+// Slide-over panel
+function openPanel(orderId, brand) {
+  var panel = document.getElementById('slide-over');
+  var backdrop = document.getElementById('slide-backdrop');
+  var body = document.getElementById('panel-body');
+  var title = document.getElementById('panel-title');
+
+  title.textContent = 'Order #' + orderId;
+  body.innerHTML = '<div class="panel-loading">Loading...</div>';
+  panel.classList.add('open');
+  backdrop.classList.add('open');
+
+  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) { renderPanelContent(data); })
+    .catch(function(err) {
+      body.innerHTML = '<div class="panel-loading">Failed to load order: ' + esc(err.message) + '</div>';
+    });
+}
+
+function closePanel() {
+  document.getElementById('slide-over').classList.remove('open');
+  document.getElementById('slide-backdrop').classList.remove('open');
+}
+
+function renderPanelContent(data) {
+  var order = data.order || {};
+  var consentLog = data.consentLog || [];
+  var b = order.score_breakdown || {};
+
+  var orderInfoRows = [
+    ['Order ID', '#' + esc(order.order_id)],
+    ['Brand', esc(order.brand)],
+    ['Date', fmtDate(order.updated_at || order.created_at)],
+    ['Description', esc(order.description || '-')],
+    ['Layout', esc(order.layout || '-')],
+    ['Consent', consentBadge(order.consent_status)],
+    ['Pipeline Stage', esc(order.production_status || '-')],
+  ];
+
+  var rankingRows = [
+    ['Reaction Video', order.has_reaction_video ? 'Yes' : 'No', b.reaction || 0],
+    ['Illus. Quality', b.illustrationQuality > 0 ? 'Good' : 'Low', b.illustrationQuality || 0],
+    ['Clear Product', order.clear_product ? 'Yes' : 'No', b.clearProduct || 0],
+    ['Layout Bonus', esc(order.layout || '-'), b.layout || 0],
+    ['People Count', '-', b.peopleCount || 0],
+    ['Body Framing', '-', b.bodyFraming || 0],
+    ['Total Score', '', order.computed_score || order.score || 0],
+  ];
+
+  var latestConsent = consentLog[0];
+  var consentSection = latestConsent
+    ? '<table class="detail-table"><tr><td>Status</td><td>' + consentBadge(order.consent_status) + '</td></tr>' +
+      '<tr><td>Last Action</td><td>' + esc(latestConsent.action) + '</td></tr>' +
+      '<tr><td>When</td><td>' + fmtDate(latestConsent.timestamp) + '</td></tr>' +
+      (latestConsent.details ? '<tr><td>Details</td><td>' + esc(latestConsent.details) + '</td></tr>' : '') +
+      '</table>'
+    : '<table class="detail-table"><tr><td>Status</td><td>' + consentBadge(order.consent_status) + '</td></tr></table>';
+
+  var driveSection = order.drive_url
+    ? '<p>' + uploadStatusBadge(order) + '</p>' +
+      '<a class="drive-link" href="' + esc(order.drive_url) + '" target="_blank" rel="noopener noreferrer">Open in Drive</a>'
+    : '<p>' + uploadStatusBadge(order) + '</p><p style="color:var(--text-dim);font-size:0.82rem">No Drive folder yet</p>';
+
+  document.getElementById('panel-title').textContent = 'Order #' + (order.order_id || '');
+  document.getElementById('panel-body').innerHTML =
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Order Info</div>' +
+    '<table class="detail-table">' +
+    orderInfoRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
+    '</table>' +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Consent Status</div>' +
+    consentSection +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Ranking Signals</div>' +
+    '<table class="detail-table"><tr><td><strong>Signal</strong></td><td><strong>Value</strong></td><td><strong>Pts</strong></td></tr>' +
+    rankingRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td><td>' + row[2] + '</td></tr>'; }).join('') +
+    '</table>' +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Drive Upload</div>' +
+    driveSection +
+    '</div>';
+}
+
+// Event listeners
+document.getElementById('panel-close').addEventListener('click', closePanel);
+document.getElementById('slide-backdrop').addEventListener('click', closePanel);
+
+document.getElementById('brand-filters').addEventListener('click', function(e) {
+  var btn = e.target.closest('.pill');
+  if (!btn) return;
+  var val = btn.dataset.brand || null;
+  state.brandFilter = (state.brandFilter === val) ? null : val;
+  renderBrandPills();
+  fetchBoard();
+});
+
+document.getElementById('status-filters').addEventListener('click', function(e) {
+  var btn = e.target.closest('.pill');
+  if (!btn) return;
+  var val = btn.dataset.status || null;
+  state.consentFilter = (state.consentFilter === val) ? null : val;
+  renderStatusPills();
+  fetchBoard();
+});
+
 // Init
-// =========================================================================
-loadOverview();
+renderStatusPills();
+fetchBrands().then(function() { return fetchBoard(); });
+
+// Polling every 30s (skip if tab hidden)
+state.pollTimer = setInterval(function() {
+  if (!document.hidden) fetchBoard();
+}, 30000);
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) fetchBoard();
+});
 </script>
 </body>
-</html>`;
+</html>
+`;
+
 
 // Serve HTML for all non-API routes
 app.get('/', (req, res) => res.type('html').send(HTML));
