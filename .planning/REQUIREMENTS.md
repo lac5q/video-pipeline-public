@@ -11,8 +11,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **BRAND-01**: Brand config system with JSON configs (logo, accent color, CTA text, product catalog, music pool, tone) for all 5 brands (TY, MMJ, TW, TC, PopSmiths)
 - [x] **BRAND-02**: Brand-aware video build -- parameterized ffmpeg scripts read brand config instead of hardcoded TY values
-- [ ] **BRAND-03**: OMS integration for shared-OMS brands (TY, MMJ, TW, TC) -- pull photos, illustrations, reaction videos per brand
-- [ ] **BRAND-04**: PopSmiths integration -- retrieve art from Heroku server, handle headless Shopify, stronger frame/product focus in video composition
+- [x] **BRAND-03**: OMS integration for shared-OMS brands (TY, MMJ, TW, TC) -- pull photos, illustrations, reaction videos per brand
+- [x] **BRAND-04**: PopSmiths integration -- retrieve art from Heroku server, handle headless Shopify, stronger frame/product focus in video composition
 - [x] **BRAND-05**: Path abstraction -- eliminate hardcoded `/Users/lcalderon/` paths; use config-driven workspace locations so Gwen can execute independently
 
 ### Consent & Permissions
@@ -25,13 +25,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Production Pipeline
 
-- [ ] **PROD-01**: UGC video build for all brands (reaction clip + product showcase + branded end card)
-- [ ] **PROD-02**: Standard reels video build for all brands (no reaction clip, product showcase only)
-- [ ] **PROD-03**: Order candidate auto-selection -- scoring algorithm based on illustration quality, reaction video availability, product diversity, recency
+- [x] **PROD-01**: UGC video build for all brands (reaction clip + product showcase + branded end card)
+- [x] **PROD-02**: Standard reels video build for all brands (no reaction clip, product showcase only)
+- [x] **PROD-03**: Order candidate auto-selection -- scoring algorithm based on illustration quality, reaction video availability, product diversity, recency
 - [ ] **PROD-04**: Gwen autonomous daily pipeline -- picks up approved orders, produces videos, uploads to Drive with social copy docs
-- [ ] **PROD-05**: Google Drive upload with per-brand folder structure (`/{Brand}/videos/{date}/`) and platform-specific social copy docs (YouTube, TikTok, Instagram, X)
-- [ ] **PROD-06**: Gemini staging retry logic -- up to 3x with exponential backoff on FinishReason.OTHER failures
-- [ ] **PROD-07**: Printful/Gooten rate limit handling -- queue with backoff for multi-brand batch processing
+- [x] **PROD-05**: Google Drive upload with per-brand folder structure (`/{Brand}/videos/{date}/`) and platform-specific social copy docs (YouTube, TikTok, Instagram, X)
+- [x] **PROD-06**: Gemini staging retry logic -- up to 3x with exponential backoff on FinishReason.OTHER failures
+- [x] **PROD-07**: Printful/Gooten rate limit handling -- queue with backoff for multi-brand batch processing
 
 ### Quality Safeguards
 
@@ -83,21 +83,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | BRAND-01 | Phase 1 | Complete |
 | BRAND-02 | Phase 1 | Complete |
-| BRAND-03 | Phase 3 | Pending |
-| BRAND-04 | Phase 3 | Pending |
+| BRAND-03 | Phase 3 | Complete |
+| BRAND-04 | Phase 3 | Complete |
 | BRAND-05 | Phase 1 | Complete |
 | CONS-01 | Phase 2 | Complete |
 | CONS-02 | Phase 2 | Complete |
 | CONS-03 | Phase 2 | Complete |
 | CONS-04 | Phase 2 | Complete |
 | CONS-05 | Phase 2 | Complete |
-| PROD-01 | Phase 3 | Pending |
-| PROD-02 | Phase 3 | Pending |
-| PROD-03 | Phase 3 | Pending |
+| PROD-01 | Phase 3 | Complete |
+| PROD-02 | Phase 3 | Complete |
+| PROD-03 | Phase 3 | Complete |
 | PROD-04 | Phase 4 | Pending |
-| PROD-05 | Phase 3 | Pending |
-| PROD-06 | Phase 3 | Pending |
-| PROD-07 | Phase 3 | Pending |
+| PROD-05 | Phase 3 | Complete |
+| PROD-06 | Phase 3 | Complete |
+| PROD-07 | Phase 3 | Complete |
 | QUAL-01 | Phase 1 | Complete |
 | QUAL-02 | Phase 1 | Complete |
 | QUAL-03 | Phase 1 | Complete |
