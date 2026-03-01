@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 
 ## Current Position
 
-Phase: 1 of 4 (Brand Config and Pipeline Foundation) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase 1 Complete
-Last activity: 2026-02-27 -- Completed 01-03 (Regression Test and Visual Verification)
+Phase: 2 of 4 (Customer Consent System) -- In Progress
+Plan: 2 of 4 in current phase (02-02 complete)
+Status: Active
+Last activity: 2026-03-01 -- Completed 02-02 (Consent Email & Server UX)
 
-Progress: [██████████] 100% (Phase 1)
+Progress: [█████░░░░░] 50% (Phase 2: 2/4 plans complete)
 
 ## Performance Metrics
 
@@ -68,6 +68,10 @@ Recent decisions affecting current work:
 - [01-02]: Music randomly selected from brand pool at build time
 - [01-03]: Regression test uses structural comparison (duration, resolution, codec, fps) not pixel-level diff
 - [01-03]: Skipped full video build checks when staged assets not in expected paths (3 checks skipped)
+- [02-02]: Shopify coupon uses GraphQL discountCodeBasicCreate (not deprecated REST price_rules), percentage: 0.15 (decimal)
+- [02-02]: Shopify credentials per-brand via brand JSON config (shopify.store + shopify.access_token_env)
+- [02-02]: Coupon code shown immediately inline on thank-you page HTML (not deferred to email)
+- [02-02]: ILLUSTRATION_URL resolved from oms_url > illustration_id fallback > empty string
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 01-03-PLAN.md (Regression Test and Visual Verification) -- Phase 1 Complete
+Last session: 2026-03-01
+Stopped at: Completed 02-02-PLAN.md (Consent Email & Server UX)
 Resume file: None
