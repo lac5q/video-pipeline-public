@@ -3,14 +3,16 @@
 # Reads brand config and product catalog via jq, builds product showcase video.
 # Derived from proven build-ugc-v11.sh, with all hardcoded values replaced by config.
 #
-# Usage: ./build-video.sh BRAND_CONFIG WORKSPACE PRODUCTS_CONFIG
+# Usage: ./build-video.sh BRAND_CONFIG WORKSPACE PRODUCTS_CONFIG [MODE]
 # Or: sourced with env vars already exported by produce-video.sh
+# MODE: ugc (force UGC with reaction), reels (force standard reel), auto (detect)
 set -euo pipefail
 
 # === Arguments / Environment ===
 BRAND_CONFIG="${1:-$BRAND_CONFIG}"
 WORKSPACE="${2:-$WORKSPACE}"
 PRODUCTS_CONFIG="${3:-$PRODUCTS_CONFIG}"
+MODE="${4:-${MODE:-auto}}"
 
 # === Pipeline root (from script location) ===
 PIPELINE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -55,7 +57,14 @@ ORDER_ID="${ORDER_ID:-$(basename "$WORKSPACE")}"
 # Detect reaction video if not already set
 HAS_REACTION="${HAS_REACTION:-false}"
 REACTION_FILE="${REACTION_FILE:-}"
-if [[ "$HAS_REACTION" = false ]]; then
+
+# MODE=reels forces no reaction (standard reel only)
+# MODE=ugc keeps detection (fails if no reaction found)
+# MODE=auto keeps existing behavior
+if [[ "$MODE" = "reels" ]]; then
+    HAS_REACTION=false
+    REACTION_FILE=""
+elif [[ "$HAS_REACTION" = false ]]; then
     for ext in mov mp4 MOV MP4; do
         if [[ -f "${WORKSPACE}/${ORDER_ID}.${ext}" ]]; then
             HAS_REACTION=true
@@ -372,11 +381,11 @@ echo "Video duration: ${VIDEO_DUR}s"
 # AUDIO MIXING
 # ========================================================================
 
-# Determine output filename
+# Determine output filename (convention: {order_id}_{type}.mp4)
 if [[ "$HAS_REACTION" = true ]]; then
-    OUTPUT="${EXPORTS}/${BRAND_SLUG}-${ORDER_ID}-ugc.mp4"
+    OUTPUT="${EXPORTS}/${ORDER_ID}_ugc.mp4"
 else
-    OUTPUT="${EXPORTS}/${BRAND_SLUG}-${ORDER_ID}-reels.mp4"
+    OUTPUT="${EXPORTS}/${ORDER_ID}_reel.mp4"
 fi
 
 mkdir -p "${EXPORTS}"
