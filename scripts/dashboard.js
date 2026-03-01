@@ -358,6 +358,62 @@ app.post('/api/batch/status', (req, res) => {
   }
 });
 
+// POST /api/consent/send-batch
+// Sends consent request emails to all approved-but-not-yet-emailed orders.
+// Eligible orders: production_status='approved' AND consent_status='pre_approved' AND customer_email present.
+// On success: updates consent_status to 'pending' for each order sent.
+// Returns: { success: true, sent: N, failed: N, errors: string[], total: N }
+app.post('/api/consent/send-batch', async (req, res) => {
+  const db = getDb();
+  try {
+    const { brand } = req.body || {};
+    const emailLib = require(path.join(PIPELINE_ROOT, 'lib', 'email'));
+
+    const conditions = [
+      "production_status = 'approved'",
+      "consent_status = 'pre_approved'",
+      "customer_email IS NOT NULL",
+      "customer_email != ''",
+    ];
+    const params = {};
+    if (brand) {
+      conditions.push('brand = @brand');
+      params.brand = brand;
+    }
+
+    const orders = db.prepare(
+      `SELECT * FROM orders WHERE ${conditions.join(' AND ')}`
+    ).all(params);
+
+    let sent = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const order of orders) {
+      try {
+        await emailLib.sendConsentRequest(
+          order.order_id,
+          order.brand,
+          order.customer_email,
+          order.customer_name || 'Valued Customer',
+          order.order_description || `Order ${order.order_id}`
+        );
+        db.prepare(
+          "UPDATE orders SET consent_status = 'pending', updated_at = datetime('now') WHERE order_id = ? AND brand = ?"
+        ).run(order.order_id, order.brand);
+        sent++;
+      } catch (err) {
+        failed++;
+        errors.push(`${order.order_id} (${order.brand}): ${err.message}`);
+      }
+    }
+
+    res.json({ success: true, sent, failed, errors, total: orders.length });
+  } finally {
+    db.close();
+  }
+});
+
 // GET /api/production-runs
 app.get('/api/production-runs', (req, res) => {
   const db = getDb();
@@ -1031,5 +1087,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`    GET  /api/orders/:orderId/:brand`);
   console.log(`    POST /api/orders/:orderId/:brand/status`);
   console.log(`    POST /api/batch/status`);
+  console.log(`    POST /api/consent/send-batch`);
   console.log(`    GET  /api/production-runs\n`);
 });
