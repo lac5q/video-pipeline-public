@@ -28,7 +28,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PROD-01**: UGC video build for all brands (reaction clip + product showcase + branded end card)
 - [x] **PROD-02**: Standard reels video build for all brands (no reaction clip, product showcase only)
 - [x] **PROD-03**: Order candidate auto-selection -- scoring algorithm based on illustration quality, reaction video availability, product diversity, recency
-- [ ] **PROD-04**: Gwen autonomous daily pipeline -- picks up approved orders, produces videos, uploads to Drive with social copy docs
+- [x] **PROD-04**: Gwen autonomous daily pipeline -- picks up approved orders, produces videos, uploads to Drive with social copy docs
 - [x] **PROD-05**: Google Drive upload with per-brand folder structure (`/{Brand}/videos/{date}/`) and platform-specific social copy docs (YouTube, TikTok, Instagram, X)
 - [x] **PROD-06**: Gemini staging retry logic -- up to 3x with exponential backoff on FinishReason.OTHER failures
 - [x] **PROD-07**: Printful/Gooten rate limit handling -- queue with backoff for multi-brand batch processing
@@ -94,7 +94,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROD-01 | Phase 3 | Complete |
 | PROD-02 | Phase 3 | Complete |
 | PROD-03 | Phase 3 | Complete |
-| PROD-04 | Phase 4 | Pending |
+| PROD-04 | Phase 4 | Complete |
 | PROD-05 | Phase 3 | Complete |
 | PROD-06 | Phase 3 | Complete |
 | PROD-07 | Phase 3 | Complete |
