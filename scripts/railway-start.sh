@@ -4,6 +4,8 @@
 echo "=== Video Pipeline Dashboard Startup ==="
 
 export DB_PATH="${DB_PATH:-/data/pipeline.db}"
+echo "DB_PATH is set to: $DB_PATH"
+echo "Directory exists: $(ls -la $(dirname "$DB_PATH") 2>/dev/null || echo 'Directory does not exist')"
 mkdir -p "$(dirname "$DB_PATH")"
 
 # Check if database exists and has orders
