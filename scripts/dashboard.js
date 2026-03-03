@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 
 const PIPELINE_ROOT =
@@ -9,28 +10,239 @@ const PIPELINE_ROOT =
 
 const { getDatabase } = require(path.join(PIPELINE_ROOT, 'lib', 'db'));
 const { scoreOrder, rankOrders } = require(path.join(PIPELINE_ROOT, 'lib', 'scorer'));
+const consentApp = require(path.join(PIPELINE_ROOT, 'scripts', 'consent-server'));
 
 const app = express();
 const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 3001;
 
 app.use(express.json());
 
-// Basic auth for production (set DASHBOARD_USER and DASHBOARD_PASS env vars)
-if (process.env.DASHBOARD_USER && process.env.DASHBOARD_PASS) {
-  app.use((req, res, next) => {
-    const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Basic ')) {
-      res.setHeader('WWW-Authenticate', 'Basic realm="Video Pipeline"');
-      return res.status(401).send('Authentication required');
-    }
-    const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
-    if (user === process.env.DASHBOARD_USER && pass === process.env.DASHBOARD_PASS) {
-      return next();
-    }
-    res.setHeader('WWW-Authenticate', 'Basic realm="Video Pipeline"');
-    return res.status(401).send('Invalid credentials');
+// Trust Railway's proxy
+app.set('trust proxy', 1);
+
+// Basic security headers
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Simple HTML login page
+const LOGIN_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Video Pipeline</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #111827;
+    color: #f9fafb;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-container {
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    border-radius: 8px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  .login-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .login-subtitle {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    color: #f9fafb;
+    font-size: 1rem;
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+  }
+  .login-button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #4f46e5;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .login-button:hover {
+    background: #6366f1;
+  }
+  .error-message {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="login-container">
+  <h1 class="login-title">Video Pipeline</h1>
+  <p class="login-subtitle">Sign in to your dashboard</p>
+  
+  <div class="error-message" id="error-message">Invalid username or password</div>
+  
+  <form id="login-form">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input class="form-input" type="text" id="username" name="username" required autocomplete="username">
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password">
+    </div>
+    
+    <button class="login-button" type="submit">Sign In</button>
+  </form>
+</div>
+
+<script>
+document.getElementById('login-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  var username = document.getElementById('username').value;
+  var password = document.getElementById('password').value;
+  
+  fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, password: password })
+  })
+  .then(function(r) {
+    if (r.ok) return r.json();
+    throw new Error('Login failed');
+  })
+  .then(function(data) {
+    localStorage.setItem('pipeline_user', data.username);
+    localStorage.setItem('pipeline_token', data.token);
+    window.location.href = '/';
+  })
+  .catch(function() {
+    document.getElementById('error-message').style.display = 'block';
+  })
+  .catch(function(err) {
+    document.getElementById('error-message').style.display = 'block';
   });
+});
+
+// Check if already logged in
+var _token = localStorage.getItem('pipeline_token');
+if (localStorage.getItem('pipeline_user') && _token) {
+  fetch('/api/verify', { headers: { 'X-Session-Token': _token } }).then(function(r) {
+    if (r.ok) window.location.href = '/';
+  }).catch(function() {});
 }
+</script>
+</body>
+</html>`;
+
+// Session-based auth
+let AUTH_CONFIG = {
+  user: process.env.DASHBOARD_USER || 'admin',
+  pass: process.env.DASHBOARD_PASS || 'admin123',
+};
+
+if (!process.env.DASHBOARD_USER || !process.env.DASHBOARD_PASS) {
+  console.warn('WARNING: Using default credentials. Set DASHBOARD_USER and DASHBOARD_PASS for production.');
+}
+
+let _activeSessionToken = null;
+
+// Login endpoint
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === AUTH_CONFIG.user && password === AUTH_CONFIG.pass) {
+    _activeSessionToken = crypto.randomBytes(32).toString('hex');
+    res.json({ success: true, username, token: _activeSessionToken });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Verify endpoint
+app.get('/api/verify', (req, res) => {
+  const token = req.headers['x-session-token'];
+  if (token && token === _activeSessionToken) {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  _activeSessionToken = null;
+  res.json({ success: true });
+});
+
+// Auth middleware for API routes
+function requireAuth(req, res, next) {
+  const token = req.headers['x-session-token'] || req.query._token;
+  if (token && token === _activeSessionToken) {
+    return next();
+  }
+  res.status(401).json({ error: 'Unauthorized' });
+}
+
+// Apply auth to all /api/* except login
+app.use('/api', (req, res, next) => {
+  if (req.path === '/login') return next();
+  requireAuth(req, res, next);
+});
+
+// Health check -- unauthenticated, used by Railway
+app.get('/healthz', (_req, res) => {
+  try {
+    const db = getDb();
+    db.prepare('SELECT 1').get();
+    db.close();
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({ status: 'error', message: err.message });
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -606,7 +818,13 @@ app.get('/api/pipeline/sse', (req, res) => {
   const clientId = Date.now();
   sseClients.set(clientId, res);
 
+  // Keepalive every 15s to prevent Railway proxy timeout
+  const keepalive = setInterval(() => {
+    res.write(': keepalive\n\n');
+  }, 15000);
+
   req.on('close', () => {
+    clearInterval(keepalive);
     sseClients.delete(clientId);
   });
 
@@ -1208,6 +1426,109 @@ const HTML = `<!DOCTYPE html>
   /* Loading/error states */
   .board-loading { padding: 3rem; text-align: center; color: var(--text-dim); font-size: 0.9rem; }
 
+  /* Login overlay */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  .login-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .login-subtitle {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .login-form-group {
+    margin-bottom: 1rem;
+  }
+  .login-form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .login-form-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .login-form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .login-button {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .login-button:hover {
+    background: var(--accent-hover);
+  }
+  .login-error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--danger);
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    display: none;
+  }
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+  .user-name {
+    font-size: 0.875rem;
+    color: var(--text-dim);
+  }
+  .btn-logout {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-logout:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
   /* ── Phase 7: Pipeline control panel ── */
   .pipeline-control-panel {
     position: fixed;
@@ -1568,8 +1889,36 @@ const HTML = `<!DOCTYPE html>
   <span class="nav-logo">Video Pipeline</span>
   <span class="nav-brand-indicator" id="nav-brand-indicator"></span>
   <span class="nav-spacer"></span>
+  <div class="user-menu" id="user-menu" style="display:none;">
+    <span class="user-name" id="user-name">admin</span>
+    <button class="btn-logout" id="btn-logout">Logout</button>
+  </div>
   <span class="nav-last-updated" id="nav-last-updated">Loading...</span>
 </nav>
+
+<!-- Login Overlay -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h1 class="login-title">Video Pipeline</h1>
+    <p class="login-subtitle">Sign in to your dashboard</p>
+    
+    <div class="login-error" id="login-error">Invalid username or password</div>
+    
+    <form id="login-form">
+      <div class="login-form-group">
+        <label class="login-form-label" for="login-username">Username</label>
+        <input class="login-form-input" type="text" id="login-username" required autocomplete="username">
+      </div>
+      
+      <div class="login-form-group">
+        <label class="login-form-label" for="login-password">Password</label>
+        <input class="login-form-input" type="password" id="login-password" required autocomplete="current-password">
+      </div>
+      
+      <button class="login-button" type="submit">Sign In</button>
+    </form>
+  </div>
+</div>
 
 <!-- Filters -->
 <div class="filters">
@@ -1634,6 +1983,151 @@ const HTML = `<!DOCTYPE html>
 </div>
 
 <script>
+// Login system
+var authState = {
+  isLoggedIn: false,
+  username: null,
+  token: null,
+};
+
+// Authenticated fetch wrapper -- attaches session token to all requests
+function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  if (authState.token) {
+    opts.headers['X-Session-Token'] = authState.token;
+  }
+  return fetch(url, opts).then(function(r) {
+    if (r.status === 401 && authState.isLoggedIn) {
+      // Session expired -- force re-login
+      logout();
+    }
+    return r;
+  });
+}
+
+function checkLogin() {
+  var stored = localStorage.getItem('pipeline_user');
+  var token = localStorage.getItem('pipeline_token');
+  if (stored && token) {
+    authState.token = token;
+    // Verify token is still valid
+    fetch('/api/verify', { headers: { 'X-Session-Token': token } })
+      .then(function(r) {
+        if (r.ok) {
+          authState.isLoggedIn = true;
+          authState.username = stored;
+          showDashboard();
+        } else {
+          localStorage.removeItem('pipeline_user');
+          localStorage.removeItem('pipeline_token');
+          showLogin();
+        }
+      })
+      .catch(function() { showLogin(); });
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('user-menu').style.display = 'none';
+  document.getElementById('kanban-board').style.display = 'none';
+  document.getElementById('brand-filters').parentElement.style.display = 'none';
+  document.getElementById('status-filters').parentElement.style.display = 'none';
+}
+
+function showDashboard() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('user-menu').style.display = 'flex';
+  document.getElementById('user-name').textContent = authState.username;
+  document.getElementById('kanban-board').style.display = 'flex';
+  document.getElementById('brand-filters').parentElement.style.display = 'flex';
+  document.getElementById('status-filters').parentElement.style.display = 'flex';
+}
+
+function login(username, password) {
+  fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username, password: password })
+  })
+  .then(function(r) {
+    if (r.ok) return r.json();
+    throw new Error('Invalid credentials');
+  })
+  .then(function(data) {
+    if (data.success) {
+      authState.isLoggedIn = true;
+      authState.username = data.username;
+      authState.token = data.token;
+      localStorage.setItem('pipeline_user', data.username);
+      localStorage.setItem('pipeline_token', data.token);
+      showDashboard();
+      fetchBrands().then(function() { return fetchBoard(); });
+    } else {
+      throw new Error('Login failed');
+    }
+  })
+  .catch(function(err) {
+    document.getElementById('login-error').style.display = 'block';
+  });
+}
+
+function logout() {
+  authFetch('/api/logout', { method: 'POST' }).catch(function() {});
+  authState.isLoggedIn = false;
+  authState.username = null;
+  authState.token = null;
+  localStorage.removeItem('pipeline_user');
+  localStorage.removeItem('pipeline_token');
+  showLogin();
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// Login form handler
+document.addEventListener('DOMContentLoaded', function() {
+  var loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var username = document.getElementById('login-username').value;
+      var password = document.getElementById('login-password').value;
+      document.getElementById('login-error').style.display = 'none';
+      login(username, password);
+    });
+  }
+  
+  var logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logout);
+  }
+  
+  // Check login state
+  checkLogin();
+  
+  // Pipeline control
+  var runBtn = document.getElementById('btn-run-pipeline');
+  if (runBtn) {
+    runBtn.addEventListener('click', runPipeline);
+  }
+  
+  // Run history toggle
+  var toggleBtn = document.getElementById('btn-toggle-history');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', toggleRunHistory);
+  }
+  
+  // Initial fetch of run history
+  fetchRunHistory();
+  
+  // Connect to SSE stream
+  connectPipelineSSE();
+});
+
 // Constants
 var LANES = [
   { id: 'candidates',       label: 'Candidates',        accent: '#6366f1' },
@@ -1808,7 +2302,7 @@ function fetchBoard() {
   if (state.brandFilter) params.set('brand', state.brandFilter);
   if (state.consentFilter) params.set('consent_status', state.consentFilter);
 
-  fetch('/api/board?' + params.toString())
+  authFetch('/api/board?' + params.toString())
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -1827,7 +2321,7 @@ function fetchBoard() {
 
 // Brands fetch
 function fetchBrands() {
-  return fetch('/api/stats')
+  return authFetch('/api/stats')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       state.brands = data.brands || [];
@@ -1851,7 +2345,7 @@ function openPanel(orderId, brand) {
   panel.classList.add('open');
   backdrop.classList.add('open');
 
-  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+  authFetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -1894,7 +2388,7 @@ function closeLightbox() {
 
 // ── Phase 6: Approve single order ──
 function approveOrder(orderId, brand) {
-  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
+  authFetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ production_status: 'approved' })
@@ -1913,7 +2407,7 @@ function approveOrder(orderId, brand) {
 
 // ── Phase 6: Reject single order ──
 function rejectOrder(orderId, brand) {
-  fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
+  authFetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ production_status: 'rejected' })
@@ -1933,7 +2427,7 @@ function rejectOrder(orderId, brand) {
 // ── Phase 6: Batch approve all candidates ──
 function batchApproveAll(orders, count) {
   if (!confirm('Approve ' + count + ' candidates? This will queue them for consent emails.')) return;
-  fetch('/api/batch/status', {
+  authFetch('/api/batch/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orders: orders, production_status: 'approved' })
@@ -1955,7 +2449,7 @@ function sendConsentBatch(btn, count) {
   if (!confirm('Send consent emails to ' + count + ' customers? This cannot be undone.')) return;
   btn.disabled = true;
   btn.textContent = 'Sending...';
-  fetch('/api/consent/send-batch', {
+  authFetch('/api/consent/send-batch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({})
@@ -2088,7 +2582,7 @@ var pipelineState = {
 function connectPipelineSSE() {
   if (pipelineSse) return;
   
-  pipelineSse = new EventSource('/api/pipeline/sse');
+  pipelineSse = new EventSource('/api/pipeline/sse?_token=' + encodeURIComponent(authState.token || ''));
   
   pipelineSse.addEventListener('message', function(e) {
     try {
@@ -2173,7 +2667,7 @@ function runPipeline() {
   var log = document.getElementById('pipeline-log');
   if (log) log.innerHTML = '';
   
-  fetch('/api/pipeline/run', {
+  authFetch('/api/pipeline/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({})
@@ -2204,7 +2698,7 @@ function runPipeline() {
 
 // Fetch run history
 function fetchRunHistory() {
-  fetch('/api/pipeline/history')
+  authFetch('/api/pipeline/history')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       renderRunHistory(data.runs || []);
@@ -2278,7 +2772,7 @@ function toggleRunHistory() {
 function resendConsentEmail(orderId, brand) {
   if (!confirm('Resend consent email to order #' + orderId + '?')) return;
   
-  fetch('/api/consent/resend/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand), {
+  authFetch('/api/consent/resend/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand), {
     method: 'POST'
   })
   .then(function(r) {
@@ -2431,7 +2925,7 @@ function loadVideoPlayer(orderId, brand) {
   videoState.currentOrderId = orderId;
   videoState.currentBrand = brand;
   
-  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+  authFetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
     .then(function(r) { return r.json(); })
     .then(function(data) {
       videoState.videos = data.videos || [];
@@ -2471,7 +2965,7 @@ function renderVideoPlayer(data) {
   if (hasUgc || hasReel) {
     typeSelector = '<div class="video-type-selector">';
     if (hasUgc) {
-      typeSelector += '<button class="btn-video-type' + (videoState.currentType === 'ugc' ? ' active' : '') + '" data-type="ugc">UGC Reel' + (hasReaction ? ' (Reaction)' : '') + '</button>';
+      typeSelector += '<button class="btn-video-type' + (videoState.currentType === 'ugc' ? ' active' : '') + '" data-type="ugc">UGC Reel</button>';
     }
     if (hasReel) {
       typeSelector += '<button class="btn-video-type' + (videoState.currentType === 'reel' ? ' active' : '') + '" data-type="reel">Standard Reel</button>';
@@ -2486,7 +2980,7 @@ function renderVideoPlayer(data) {
   var playerHtml = '<div class="video-player-container">';
   if (currentVideo) {
     playerHtml += '<video class="video-player" controls preload="metadata">' +
-      '<source src="' + esc(currentVideo.path) + '" type="video/mp4">' +
+      '<source src="' + esc(currentVideo.path) + '?_token=' + encodeURIComponent(authState.token || '') + '" type="video/mp4">' +
       'Your browser does not support the video tag.' +
       '</video>';
   } else {
@@ -2539,7 +3033,7 @@ function renderVideoPlayer(data) {
 function approveVideo(orderId, brand) {
   if (!confirm('Approve this video for Drive upload? This will mark it as ready for upload.')) return;
   
-  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/approve', {
+  authFetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/approve', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ video_type: videoState.currentType })
@@ -2564,7 +3058,7 @@ function rejectVideo(orderId, brand) {
   var reason = prompt('Please provide a reason for rejecting this video (optional):');
   if (reason === null) return; // User cancelled
   
-  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/reject', {
+  authFetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/reject', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason: reason || 'No reason provided' })
@@ -2597,7 +3091,7 @@ function loadSocialCopy(orderId, brand) {
   socialCopyState.currentOrderId = orderId;
   socialCopyState.currentBrand = brand;
   
-  fetch('/api/social-copy/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+  authFetch('/api/social-copy/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
     .then(function(r) { return r.json(); })
     .then(function(data) {
       socialCopyState.copy = data.copy;
@@ -2810,27 +3304,6 @@ function fallbackCopyToClipboard(text) {
   
   document.body.removeChild(textArea);
 }
-
-// Phase 7: Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-  // Pipeline control
-  var runBtn = document.getElementById('btn-run-pipeline');
-  if (runBtn) {
-    runBtn.addEventListener('click', runPipeline);
-  }
-  
-  // Run history toggle
-  var toggleBtn = document.getElementById('btn-toggle-history');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', toggleRunHistory);
-  }
-  
-  // Initial fetch of run history
-  fetchRunHistory();
-  
-  // Connect to SSE stream
-  connectPipelineSSE();
-});
 </script>
 </body>
 </html>
@@ -2838,11 +3311,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // Serve HTML for all non-API routes
-app.get('/', (req, res) => res.type('html').send(HTML));
+app.get('/', (req, res) => {
+  // Check if it's a direct navigation (not API call)
+  const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
+  if (acceptsHtml) {
+    res.type('html').send(HTML);
+  } else {
+    res.json({ error: 'Use browser to access dashboard' });
+  }
+});
 app.get('/orders', (req, res) => res.type('html').send(HTML));
 app.get('/orders/:id', (req, res) => res.type('html').send(HTML));
 app.get('/batch', (req, res) => res.type('html').send(HTML));
 app.get('/pipeline', (req, res) => res.type('html').send(HTML));
+
+// Mount consent public routes (token-based consent flow)
+app.use(consentApp);
+
+// Global error handler
+app.use((err, _req, res, _next) => {
+  console.error('Unhandled route error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  setTimeout(() => process.exit(1), 1000);
+});
 
 // ---------------------------------------------------------------------------
 // Start server
