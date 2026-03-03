@@ -11,7 +11,7 @@ mkdir -p "$(dirname "$DB_PATH")"
 # Check if database exists and has orders
 if [ ! -f "$DB_PATH" ]; then
   echo "Database file doesn't exist, initializing with sample data..."
-  node scripts/init-sample-data.js
+  node scripts/init-db-at-volume.js
 else
   # Check if database has any orders (try to query it)
   ORDER_COUNT=$(node -e "
@@ -27,7 +27,7 @@ else
   
   if [ "$ORDER_COUNT" -eq 0 ]; then
     echo "Database exists but is empty, initializing with sample data..."
-    node scripts/init-sample-data.js
+    node scripts/init-db-at-volume.js
   else
     echo "Database exists with $ORDER_COUNT orders, proceeding with import..."
     echo "Running data import (DB_PATH=$DB_PATH)..."
