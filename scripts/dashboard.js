@@ -425,6 +425,392 @@ app.get('/api/production-runs', (req, res) => {
   }
 });
 
+// GET /api/consent/status/:orderId/:brand
+// Returns detailed consent status with full log history
+app.get('/api/consent/status/:orderId/:brand', (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const consentLog = db.prepare(
+      'SELECT * FROM consent_log WHERE order_id = ? AND brand = ? ORDER BY timestamp DESC'
+    ).all(orderId, brand);
+
+    // Get token status if exists
+    const tokens = db.prepare(
+      "SELECT * FROM consent_tokens WHERE order_id = ? AND brand = ? ORDER BY created_at DESC LIMIT 2"
+    ).all(orderId, brand);
+
+    const tokenStatus = tokens.map(t => ({
+      action: t.action,
+      created_at: t.created_at,
+      expires_at: t.expires_at,
+      used_at: t.used_at,
+      is_expired: t.expires_at && new Date(t.expires_at) < new Date(),
+      is_used: !!t.used_at,
+    }));
+
+    res.json({
+      order_id: order.order_id,
+      brand: order.brand,
+      consent_status: order.consent_status,
+      customer_email: order.customer_email,
+      consent_log: consentLog,
+      tokens: tokenStatus,
+      last_updated: order.updated_at,
+    });
+  } finally {
+    db.close();
+  }
+});
+
+// POST /api/consent/resend/:orderId/:brand
+// Resend consent email to a specific order
+app.post('/api/consent/resend/:orderId/:brand', async (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (!order.customer_email) return res.status(400).json({ error: 'No customer email on file' });
+
+    const emailLib = require(path.join(PIPELINE_ROOT, 'lib', 'email'));
+    await emailLib.sendConsentRequest(
+      order.order_id,
+      order.brand,
+      order.customer_email,
+      order.customer_name || 'Valued Customer',
+      order.order_description || `Order ${order.order_id}`
+    );
+
+    // Log the resend
+    db.prepare(
+      'INSERT INTO consent_log (order_id, brand, action, details) VALUES (?, ?, ?, ?)'
+    ).run(orderId, brand, 'consent_resent', 'Consent email resent from dashboard');
+
+    res.json({ success: true, message: 'Consent email resent' });
+  } catch (err) {
+    console.error('Resend consent error:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    db.close();
+  }
+});
+
+// POST /api/pipeline/run
+// Trigger the daily pipeline run
+app.post('/api/pipeline/run', async (req, res) => {
+  try {
+    const { spawn } = require('child_process');
+    const { brand, limit } = req.body || {};
+    
+    const runId = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_');
+    
+    // Build command
+    const scriptPath = path.join(PIPELINE_ROOT, 'scripts', 'daily-pipeline.sh');
+    const args = [];
+    if (brand) args.push('--brand', brand);
+    if (limit) args.push('--limit', String(limit));
+    
+    // Spawn the pipeline process
+    const child = spawn('bash', [scriptPath, ...args], {
+      cwd: PIPELINE_ROOT,
+      env: { ...process.env, PIPELINE_RUN_ID: runId },
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let output = [];
+    let errors = [];
+
+    child.stdout.on('data', (data) => {
+      const line = data.toString();
+      output.push(line);
+      // Broadcast to connected SSE clients
+      broadcastPipelineUpdate(runId, { type: 'log', level: 'info', message: line.trim(), timestamp: new Date().toISOString() });
+    });
+
+    child.stderr.on('data', (data) => {
+      const line = data.toString();
+      errors.push(line);
+      broadcastPipelineUpdate(runId, { type: 'log', level: 'error', message: line.trim(), timestamp: new Date().toISOString() });
+    });
+
+    child.on('close', (code) => {
+      broadcastPipelineUpdate(runId, { 
+        type: 'complete', 
+        exit_code: code, 
+        timestamp: new Date().toISOString(),
+        output_lines: output.length,
+        error_lines: errors.length
+      });
+    });
+
+    child.on('error', (err) => {
+      broadcastPipelineUpdate(runId, { type: 'error', message: err.message, timestamp: new Date().toISOString() });
+    });
+
+    res.json({ 
+      success: true, 
+      run_id: runId, 
+      message: 'Pipeline started',
+      status_url: `/api/pipeline/status/${runId}`
+    });
+  } catch (err) {
+    console.error('Pipeline trigger error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/pipeline/status/:runId
+// Get current pipeline run status
+app.get('/api/pipeline/status/:runId', (req, res) => {
+  const { runId } = req.params;
+  const db = getDb();
+  try {
+    const run = db.prepare('SELECT * FROM daily_runs WHERE run_id = ?').get(runId);
+    if (!run) {
+      return res.json({
+        run_id: runId,
+        status: 'not_started',
+        message: 'Run not found in database yet'
+      });
+    }
+
+    res.json({
+      run_id: run.run_id,
+      status: run.status || 'running',
+      brands_processed: run.brands_processed,
+      orders_attempted: run.orders_attempted || 0,
+      orders_succeeded: run.orders_succeeded || 0,
+      orders_failed: run.orders_failed || 0,
+      orders_skipped: run.orders_skipped || 0,
+      started_at: run.started_at,
+      completed_at: run.completed_at,
+    });
+  } finally {
+    db.close();
+  }
+});
+
+// GET /api/pipeline/sse
+// Server-Sent Events endpoint for live pipeline progress
+app.get('/api/pipeline/sse', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  const clientId = Date.now();
+  sseClients.set(clientId, res);
+
+  req.on('close', () => {
+    sseClients.delete(clientId);
+  });
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: 'connected', client_id: clientId, timestamp: new Date().toISOString() })}\n\n`);
+});
+
+// GET /api/pipeline/history
+// Get pipeline run history
+app.get('/api/pipeline/history', (req, res) => {
+  const db = getDb();
+  try {
+    const { limit = 20 } = req.query;
+    const runs = db.prepare(
+      'SELECT * FROM daily_runs ORDER BY started_at DESC LIMIT ?'
+    ).all(parseInt(limit, 10) || 20);
+
+    res.json({ runs });
+  } finally {
+    db.close();
+  }
+});
+
+// GET /api/video/:orderId/:brand
+// Get video files and metadata for an order
+app.get('/api/video/:orderId/:brand', (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const exportsDir = path.join(PIPELINE_ROOT, 'orders', brand, orderId, 'exports');
+    let videos = [];
+    
+    if (fs.existsSync(exportsDir)) {
+      const files = fs.readdirSync(exportsDir);
+      videos = files.filter(f => /\.(mp4|mov|webm|avi)$/i.test(f)).map(filename => {
+        const filePath = path.join(exportsDir, filename);
+        const stats = fs.statSync(filePath);
+        return {
+          filename,
+          path: `/api/video/file/${brand}/${orderId}/${encodeURIComponent(filename)}`,
+          size: stats.size,
+          created_at: stats.mtime.toISOString(),
+          type: filename.includes('ugc') ? 'ugc' : 'reel',
+        };
+      });
+    }
+
+    // Check Drive upload status
+    const isUploaded = order.production_status === 'uploaded' && order.drive_url;
+
+    res.json({
+      order_id: orderId,
+      brand,
+      videos,
+      drive_uploaded: isUploaded,
+      drive_url: order.drive_url || null,
+    });
+  } finally {
+    db.close();
+  }
+});
+
+// GET /api/video/file/:brand/:orderId/:filename
+// Stream video file
+app.get('/api/video/file/:brand/:orderId/:filename', (req, res) => {
+  const { brand, orderId, filename } = req.params;
+  const filePath = path.join(PIPELINE_ROOT, 'orders', brand, orderId, 'exports', decodeURIComponent(filename));
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+
+  res.setHeader('Content-Type', 'video/mp4');
+  res.setHeader('Accept-Ranges', 'bytes');
+  
+  const stat = fs.statSync(filePath);
+  res.setHeader('Content-Length', stat.size);
+  
+  const stream = fs.createReadStream(filePath);
+  stream.pipe(res);
+});
+
+// POST /api/video/:orderId/:brand/approve
+// Approve video for Drive upload
+app.post('/api/video/:orderId/:brand/approve', (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const { video_type } = req.body; // 'ugc' or 'reel'
+    
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Update production status to trigger upload
+    db.prepare(
+      "UPDATE orders SET production_status = 'pending_upload', updated_at = datetime('now') WHERE order_id = ? AND brand = ?"
+    ).run(orderId, brand);
+
+    // Log the approval
+    db.prepare(
+      'INSERT INTO consent_log (order_id, brand, action, details) VALUES (?, ?, ?, ?)'
+    ).run(orderId, brand, 'video_approved', `Approved ${video_type || 'video'} for Drive upload`);
+
+    res.json({ 
+      success: true, 
+      message: 'Video approved for Drive upload',
+      next_step: 'Run pipeline or manually upload to Drive'
+    });
+  } finally {
+    db.close();
+  }
+});
+
+// POST /api/video/:orderId/:brand/reject
+// Reject video (mark as failed, skip Drive upload)
+app.post('/api/video/:orderId/:brand/reject', (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const { reason } = req.body;
+    
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Update production status to failed
+    db.prepare(
+      "UPDATE orders SET production_status = 'failed', updated_at = datetime('now') WHERE order_id = ? AND brand = ?"
+    ).run(orderId, brand);
+
+    // Log the rejection
+    db.prepare(
+      'INSERT INTO consent_log (order_id, brand, action, details) VALUES (?, ?, ?, ?)'
+    ).run(orderId, brand, 'video_rejected', reason || 'Video rejected from dashboard');
+
+    res.json({ 
+      success: true, 
+      message: 'Video rejected',
+      status: 'Order marked as failed - will not be uploaded to Drive'
+    });
+  } finally {
+    db.close();
+  }
+});
+
+// GET /api/social-copy/:orderId/:brand
+// Get generated social copy for all platforms
+app.get('/api/social-copy/:orderId/:brand', (req, res) => {
+  const db = getDb();
+  try {
+    const { orderId, brand } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Load brand config
+    const brandConfigPath = path.join(PIPELINE_ROOT, 'brands', `${brand}.json`);
+    if (!fs.existsSync(brandConfigPath)) {
+      return res.status(400).json({ error: `Brand config not found: ${brand}` });
+    }
+    
+    const brandConfig = JSON.parse(fs.readFileSync(brandConfigPath, 'utf8'));
+    
+    // Generate copy
+    const socialCopyLib = require(path.join(PIPELINE_ROOT, 'lib', 'social-copy'));
+    const copy = socialCopyLib.generateCopy(order, brandConfig);
+    
+    // Check for existing copy files
+    const exportsDir = path.join(PIPELINE_ROOT, 'orders', brand, orderId, 'exports');
+    let existingFiles = [];
+    if (fs.existsSync(exportsDir)) {
+      existingFiles = fs.readdirSync(exportsDir).filter(f => f.endsWith('.md') || f.endsWith('.txt'));
+    }
+
+    res.json({
+      order_id: orderId,
+      brand,
+      copy,
+      existing_files: existingFiles,
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('Social copy generation error:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    db.close();
+  }
+});
+
+// SSE client management for live updates
+const sseClients = new Map();
+
+function broadcastPipelineUpdate(runId, data) {
+  const payload = JSON.stringify({ run_id: runId, ...data });
+  sseClients.forEach((res, clientId) => {
+    try {
+      res.write(`data: ${payload}\n\n`);
+    } catch (err) {
+      sseClients.delete(clientId);
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------
 // HTML Dashboard (Single-Page App)
 // ---------------------------------------------------------------------------
@@ -821,6 +1207,358 @@ const HTML = `<!DOCTYPE html>
 
   /* Loading/error states */
   .board-loading { padding: 3rem; text-align: center; color: var(--text-dim); font-size: 0.9rem; }
+
+  /* ── Phase 7: Pipeline control panel ── */
+  .pipeline-control-panel {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    z-index: 150;
+    min-width: 280px;
+    max-width: 400px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .pipeline-control-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pipeline-control-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .btn-run-pipeline {
+    background: rgba(16,185,129,0.2);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,0.4);
+    border-radius: 4px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-run-pipeline:hover { background: rgba(16,185,129,0.35); }
+  .btn-run-pipeline:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pipeline-status {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .pipeline-status.running { color: var(--warning); }
+  .pipeline-status.complete { color: var(--success); }
+  .pipeline-status.failed { color: var(--danger); }
+  .pipeline-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  .pipeline-log-line { margin: 0.15rem 0; }
+  .pipeline-log-line.error { color: var(--danger); }
+  .pipeline-log-line.info { color: var(--text-dim); }
+  .pipeline-log-line.success { color: var(--success); }
+
+  /* ── Phase 7: Run history panel ── */
+  .run-history-panel {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    z-index: 150;
+    min-width: 320px;
+    max-width: 450px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .run-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .run-history-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .btn-toggle-history {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-toggle-history:hover { background: var(--bg-card-hover); color: var(--text); }
+  .run-history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .run-history-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .run-history-item:hover { border-color: var(--accent); }
+  .run-history-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+  }
+  .run-history-id {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--accent-hover);
+  }
+  .run-history-status {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+  .run-history-status.complete { background: rgba(16,185,129,0.2); color: #10b981; }
+  .run-history-status.running { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .run-history-status.failed { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .run-history-stats {
+    display: flex;
+    gap: 0.75rem;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+  }
+  .run-history-stat { display: flex; flex-direction: column; }
+  .run-history-stat-value { font-weight: 600; color: var(--text); }
+
+  /* ── Phase 7: Consent resend button in panel ── */
+  .btn-resend-consent {
+    background: rgba(59,130,246,0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59,130,246,0.4);
+    border-radius: 4px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  .btn-resend-consent:hover { background: rgba(59,130,246,0.35); }
+  .btn-resend-consent:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Phase 7: Consent status detail in panel ── */
+  .consent-timeline {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .consent-timeline-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+  .consent-timeline-item:last-child { border-bottom: none; }
+  .consent-timeline-time {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    min-width: 120px;
+  }
+  .consent-timeline-action {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .consent-timeline-details {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+  }
+
+  /* ── Phase 8: Video player ── */
+  .video-player-container {
+    margin-top: 1rem;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+  }
+  .video-player {
+    width: 100%;
+    max-height: 500px;
+    display: block;
+  }
+  .video-placeholder {
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  .video-type-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .btn-video-type {
+    flex: 1;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-video-type:hover { border-color: var(--accent); color: var(--text); }
+  .btn-video-type.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .video-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .btn-approve-video, .btn-reject-video {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-approve-video {
+    background: rgba(16,185,129,0.2);
+    color: #10b981;
+  }
+  .btn-approve-video:hover { background: rgba(16,185,129,0.35); }
+  .btn-approve-video:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-reject-video {
+    background: rgba(239,68,68,0.2);
+    color: #ef4444;
+  }
+  .btn-reject-video:hover { background: rgba(239,68,68,0.35); }
+  .btn-reject-video:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Phase 8: Social copy panel ── */
+  .social-copy-panel {
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .social-copy-tabs {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .social-copy-tab {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .social-copy-tab:hover { color: var(--text); background: var(--bg-card-hover); }
+  .social-copy-tab.active {
+    color: var(--accent-hover);
+    border-bottom-color: var(--accent);
+    background: var(--bg-card);
+  }
+  .social-copy-content {
+    padding: 1rem;
+    background: var(--bg-card);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .social-copy-section {
+    margin-bottom: 1rem;
+  }
+  .social-copy-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+  }
+  .social-copy-text {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    font-family: 'Monaco', 'Consolas', monospace;
+    line-height: 1.4;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .btn-copy-clipboard {
+    margin-top: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(59,130,246,0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59,130,246,0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-copy-clipboard:hover { background: rgba(59,130,246,0.35); }
+  .hashtags {
+    color: var(--info);
+    font-size: 0.75rem;
+    margin-top: 0.35rem;
+  }
 </style>
 </head>
 <body>
@@ -873,6 +1611,27 @@ const HTML = `<!DOCTYPE html>
 
 <!-- Phase 6: Toast container -->
 <div id="toast-container"></div>
+
+<!-- Phase 7: Pipeline control panel -->
+<div class="pipeline-control-panel" id="pipeline-control-panel">
+  <div class="pipeline-control-header">
+    <span class="pipeline-control-title">Pipeline Control</span>
+    <button class="btn-run-pipeline" id="btn-run-pipeline">Run Pipeline</button>
+  </div>
+  <div class="pipeline-status" id="pipeline-status">Status: Idle</div>
+  <div class="pipeline-log" id="pipeline-log"></div>
+</div>
+
+<!-- Phase 7: Run history panel -->
+<div class="run-history-panel" id="run-history-panel">
+  <div class="run-history-header">
+    <span class="run-history-title">Run History</span>
+    <button class="btn-toggle-history" id="btn-toggle-history" title="Toggle history">−</button>
+  </div>
+  <div class="run-history-list" id="run-history-list">
+    <div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:1rem;">Loading...</div>
+  </div>
+</div>
 
 <script>
 // Constants
@@ -1221,72 +1980,6 @@ function sendConsentBatch(btn, count) {
     });
 }
 
-function renderPanelContent(data) {
-  var order = data.order || {};
-  var consentLog = data.consentLog || [];
-  var b = order.score_breakdown || {};
-
-  var orderInfoRows = [
-    ['Order ID', '#' + esc(order.order_id)],
-    ['Brand', esc(order.brand)],
-    ['Date', fmtDate(order.updated_at || order.created_at)],
-    ['Description', esc(order.description || '-')],
-    ['Layout', esc(order.layout || '-')],
-    ['Consent', consentBadge(order.consent_status)],
-    ['Pipeline Stage', esc(order.production_status || '-')],
-  ];
-
-  var rankingRows = [
-    ['Reaction Video', order.has_reaction_video ? 'Yes' : 'No', b.reaction || 0],
-    ['Illus. Quality', b.illustrationQuality > 0 ? 'Good' : 'Low', b.illustrationQuality || 0],
-    ['Clear Product', order.clear_product ? 'Yes' : 'No', b.clearProduct || 0],
-    ['Layout Bonus', esc(order.layout || '-'), b.layout || 0],
-    ['People Count', '-', b.peopleCount || 0],
-    ['Body Framing', '-', b.bodyFraming || 0],
-    ['Total Score', '', order.computed_score || order.score || 0],
-  ];
-
-  var latestConsent = consentLog[0];
-  var consentSection = latestConsent
-    ? '<table class="detail-table"><tr><td>Status</td><td>' + consentBadge(order.consent_status) + '</td></tr>' +
-      '<tr><td>Last Action</td><td>' + esc(latestConsent.action) + '</td></tr>' +
-      '<tr><td>When</td><td>' + fmtDate(latestConsent.timestamp) + '</td></tr>' +
-      (latestConsent.details ? '<tr><td>Details</td><td>' + esc(latestConsent.details) + '</td></tr>' : '') +
-      '</table>'
-    : '<table class="detail-table"><tr><td>Status</td><td>' + consentBadge(order.consent_status) + '</td></tr></table>';
-
-  var driveSection = order.drive_url
-    ? '<p>' + uploadStatusBadge(order) + '</p>' +
-      '<a class="drive-link" href="' + esc(order.drive_url) + '" target="_blank" rel="noopener noreferrer">Open in Drive</a>'
-    : '<p>' + uploadStatusBadge(order) + '</p><p style="color:var(--text-dim);font-size:0.82rem">No Drive folder yet</p>';
-
-  document.getElementById('panel-title').textContent = 'Order #' + (order.order_id || '');
-  document.getElementById('panel-body').innerHTML =
-    '<div class="panel-section">' +
-    '<div class="panel-section-title">Order Info</div>' +
-    '<table class="detail-table">' +
-    orderInfoRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
-    '</table>' +
-    '</div>' +
-
-    '<div class="panel-section">' +
-    '<div class="panel-section-title">Consent Status</div>' +
-    consentSection +
-    '</div>' +
-
-    '<div class="panel-section">' +
-    '<div class="panel-section-title">Ranking Signals</div>' +
-    '<table class="detail-table"><tr><td><strong>Signal</strong></td><td><strong>Value</strong></td><td><strong>Pts</strong></td></tr>' +
-    rankingRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td><td>' + row[2] + '</td></tr>'; }).join('') +
-    '</table>' +
-    '</div>' +
-
-    '<div class="panel-section">' +
-    '<div class="panel-section-title">Drive Upload</div>' +
-    driveSection +
-    '</div>';
-}
-
 // Event listeners
 document.getElementById('panel-close').addEventListener('click', closePanel);
 document.getElementById('slide-backdrop').addEventListener('click', closePanel);
@@ -1378,6 +2071,766 @@ state.pollTimer = setInterval(function() {
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden) fetchBoard();
 });
+
+// =============================================================================
+// Phase 7: Pipeline Control & Consent Tracking
+// =============================================================================
+
+// Pipeline SSE connection
+var pipelineSse = null;
+var pipelineState = {
+  running: false,
+  currentRunId: null,
+  logLines: [],
+};
+
+// Connect to SSE stream for live updates
+function connectPipelineSSE() {
+  if (pipelineSse) return;
+  
+  pipelineSse = new EventSource('/api/pipeline/sse');
+  
+  pipelineSse.addEventListener('message', function(e) {
+    try {
+      var data = JSON.parse(e.data);
+      handlePipelineUpdate(data);
+    } catch (err) {
+      console.error('SSE parse error:', err);
+    }
+  });
+  
+  pipelineSse.addEventListener('error', function(e) {
+    console.log('SSE connection error, reconnecting...');
+    pipelineSse.close();
+    pipelineSse = null;
+    setTimeout(connectPipelineSSE, 3000);
+  });
+  
+  console.log('Connected to pipeline SSE stream');
+}
+
+function handlePipelineUpdate(data) {
+  if (data.type === 'connected') {
+    console.log('SSE connected, client ID:', data.client_id);
+    return;
+  }
+  
+  if (data.run_id !== pipelineState.currentRunId) return;
+  
+  // Add log line
+  if (data.type === 'log') {
+    addPipelineLog(data.level, data.message);
+  }
+  
+  // Update status
+  if (data.type === 'complete') {
+    pipelineState.running = false;
+    updatePipelineStatus('Complete (Exit: ' + data.exit_code + ')', 'complete');
+    document.getElementById('btn-run-pipeline').disabled = false;
+    fetchRunHistory(); // Refresh history
+  }
+  
+  if (data.type === 'error') {
+    addPipelineLog('error', data.message);
+  }
+}
+
+function addPipelineLog(level, message) {
+  var log = document.getElementById('pipeline-log');
+  if (!log) return;
+  
+  var line = document.createElement('div');
+  line.className = 'pipeline-log-line ' + (level === 'error' ? 'error' : 'info');
+  line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+  
+  // Keep only last 100 lines
+  while (log.children.length > 100) {
+    log.removeChild(log.firstChild);
+  }
+}
+
+function updatePipelineStatus(text, statusClass) {
+  var status = document.getElementById('pipeline-status');
+  if (!status) return;
+  
+  status.textContent = 'Status: ' + text;
+  status.className = 'pipeline-status ' + (statusClass || '');
+}
+
+// Run pipeline
+function runPipeline() {
+  var btn = document.getElementById('btn-run-pipeline');
+  if (!btn || btn.disabled) return;
+  
+  if (!confirm('Start the daily pipeline run? This will process all consent-approved orders.')) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  
+  // Clear previous log
+  var log = document.getElementById('pipeline-log');
+  if (log) log.innerHTML = '';
+  
+  fetch('/api/pipeline/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(data) {
+    if (data.success) {
+      pipelineState.running = true;
+      pipelineState.currentRunId = data.run_id;
+      updatePipelineStatus('Running...', 'running');
+      addPipelineLog('info', 'Pipeline started with run ID: ' + data.run_id);
+      connectPipelineSSE();
+    } else {
+      throw new Error(data.error || 'Failed to start pipeline');
+    }
+  })
+  .catch(function(err) {
+    console.error('Pipeline start error:', err);
+    addPipelineLog('error', 'Failed to start: ' + err.message);
+    updatePipelineStatus('Failed to start', 'failed');
+    btn.disabled = false;
+    btn.textContent = 'Run Pipeline';
+  });
+}
+
+// Fetch run history
+function fetchRunHistory() {
+  fetch('/api/pipeline/history')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      renderRunHistory(data.runs || []);
+    })
+    .catch(function(err) {
+      console.error('Run history fetch error:', err);
+    });
+}
+
+function renderRunHistory(runs) {
+  var list = document.getElementById('run-history-list');
+  if (!list) return;
+  
+  if (runs.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:1rem;">No runs yet</div>';
+    return;
+  }
+  
+  list.innerHTML = runs.map(function(run) {
+    var statusClass = (run.status || 'complete').toLowerCase();
+    var started = run.started_at ? fmtDate(run.started_at) : '-';
+    var duration = run.completed_at && run.started_at
+      ? Math.round((new Date(run.completed_at) - new Date(run.started_at)) / 1000) + 's'
+      : '-';
+    
+    return '<div class="run-history-item" data-run-id="' + esc(run.run_id) + '">' +
+      '<div class="run-history-item-header">' +
+        '<span class="run-history-id">' + esc(run.run_id) + '</span>' +
+        '<span class="run-history-status ' + esc(statusClass) + '">' + esc(statusClass) + '</span>' +
+      '</div>' +
+      '<div class="run-history-stats">' +
+        '<span class="run-history-stat">' +
+          '<span class="run-history-stat-value">' + (run.orders_succeeded || 0) + '</span>' +
+          '<span>Success</span>' +
+        '</span>' +
+        '<span class="run-history-stat">' +
+          '<span class="run-history-stat-value">' + (run.orders_failed || 0) + '</span>' +
+          '<span>Failed</span>' +
+        '</span>' +
+        '<span class="run-history-stat">' +
+          '<span class="run-history-stat-value">' + duration + '</span>' +
+          '<span>Duration</span>' +
+        '</span>' +
+        '<span class="run-history-stat">' +
+          '<span class="run-history-stat-value">' + started + '</span>' +
+          '<span>Started</span>' +
+        '</span>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// Toggle run history panel
+function toggleRunHistory() {
+  var panel = document.getElementById('run-history-panel');
+  var list = document.getElementById('run-history-list');
+  var btn = document.getElementById('btn-toggle-history');
+  
+  if (!panel || !list || !btn) return;
+  
+  if (list.style.display === 'none') {
+    list.style.display = 'flex';
+    btn.textContent = '−';
+  } else {
+    list.style.display = 'none';
+    btn.textContent = '+';
+  }
+}
+
+// Resend consent email from panel
+function resendConsentEmail(orderId, brand) {
+  if (!confirm('Resend consent email to order #' + orderId + '?')) return;
+  
+  fetch('/api/consent/resend/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand), {
+    method: 'POST'
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(data) {
+    if (data.success) {
+      showToast('Consent email resent', 'success');
+    } else {
+      throw new Error(data.error || 'Failed to resend');
+    }
+  })
+  .catch(function(err) {
+    showToast('Error: ' + err.message, 'error');
+  });
+}
+
+// Enhanced panel rendering with consent timeline (Phase 7)
+function renderPanelContent(data) {
+  var order = data.order || {};
+  var consentLog = data.consentLog || [];
+  var b = order.score_breakdown || {};
+
+  var orderInfoRows = [
+    ['Order ID', '#' + esc(order.order_id)],
+    ['Brand', esc(order.brand)],
+    ['Date', fmtDate(order.updated_at || order.created_at)],
+    ['Description', esc(order.description || '-')],
+    ['Layout', esc(order.layout || '-')],
+    ['Consent', consentBadge(order.consent_status)],
+    ['Pipeline Stage', esc(order.production_status || '-')],
+  ];
+
+  var rankingRows = [
+    ['Reaction Video', order.has_reaction_video ? 'Yes' : 'No', b.reaction || 0],
+    ['Illus. Quality', b.illustrationQuality > 0 ? 'Good' : 'Low', b.illustrationQuality || 0],
+    ['Clear Product', order.clear_product ? 'Yes' : 'No', b.clearProduct || 0],
+    ['Layout Bonus', esc(order.layout || '-'), b.layout || 0],
+    ['People Count', '-', b.peopleCount || 0],
+    ['Body Framing', '-', b.bodyFraming || 0],
+    ['Total Score', '', order.computed_score || order.score || 0],
+  ];
+
+  // Phase 7: Enhanced consent section with timeline
+  var consentSection = '<table class="detail-table"><tr><td>Status</td><td>' + consentBadge(order.consent_status) + '</td></tr>';
+  if (consentLog && consentLog.length > 0) {
+    consentSection += '<tr><td>Last Action</td><td>' + esc(consentLog[0].action) + '</td></tr>' +
+      '<tr><td>When</td><td>' + fmtDate(consentLog[0].timestamp) + '</td></tr>';
+    if (consentLog[0].details) {
+      consentSection += '<tr><td>Details</td><td>' + esc(consentLog[0].details) + '</td></tr>';
+    }
+  }
+  consentSection += '</table>';
+  
+  // Phase 7: Consent timeline
+  if (consentLog && consentLog.length > 0) {
+    consentSection += '<div class="consent-timeline">';
+    consentSection += '<div style="font-size:0.7rem;font-weight:600;color:var(--text-dim);margin-bottom:0.35rem;">CONSENT HISTORY</div>';
+    consentLog.forEach(function(entry) {
+      consentSection += '<div class="consent-timeline-item">' +
+        '<span class="consent-timeline-time">' + fmtDate(entry.timestamp) + '</span>' +
+        '<span class="consent-timeline-action">' + esc(entry.action) + '</span>' +
+        (entry.details ? '<span class="consent-timeline-details"> — ' + esc(entry.details) + '</span>' : '') +
+        '</div>';
+    });
+    consentSection += '</div>';
+  }
+  
+  // Phase 7: Resend button for pending/declined
+  var resendButton = '';
+  if ((order.consent_status === 'pending' || order.consent_status === 'denied') && order.customer_email) {
+    resendButton = '<button class="btn-resend-consent" onclick="resendConsentEmail(\'' + 
+      esc(order.order_id) + '\',\'' + esc(order.brand) + '\')">Resend Consent Email</button>';
+  }
+
+  var driveSection = order.drive_url
+    ? '<p>' + uploadStatusBadge(order) + '</p>' +
+      '<a class="drive-link" href="' + esc(order.drive_url) + '" target="_blank" rel="noopener noreferrer">Open in Drive</a>'
+    : '<p>' + uploadStatusBadge(order) + '</p><p style="color:var(--text-dim);font-size:0.82rem">No Drive folder yet</p>';
+
+  // Phase 8: Video player section placeholder (populated asynchronously)
+  var videoSection = '<div id="video-player-section">' +
+    '<div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:2rem;">Loading video...</div>' +
+    '</div>';
+
+  // Phase 8: Social copy section placeholder (populated asynchronously)
+  var socialCopySection = '<div id="social-copy-section">' +
+    '<div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:2rem;">Loading social copy...</div>' +
+    '</div>';
+
+  document.getElementById('panel-title').textContent = 'Order #' + (order.order_id || '');
+  document.getElementById('panel-body').innerHTML =
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Order Info</div>' +
+    '<table class="detail-table">' +
+    orderInfoRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
+    '</table>' +
+    resendButton +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Consent Status</div>' +
+    consentSection +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Ranking Signals</div>' +
+    '<table class="detail-table"><tr><td><strong>Signal</strong></td><td><strong>Value</strong></td><td><strong>Pts</strong></td></tr>' +
+    rankingRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td><td>' + row[2] + '</td></tr>'; }).join('') +
+    '</table>' +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Drive Upload</div>' +
+    driveSection +
+    '</div>' +
+
+    // Phase 8: Video player section
+    '<div class="panel-section" id="video-section">' +
+    '<div class="panel-section-title">Video Preview</div>' +
+    videoSection +
+    '</div>' +
+
+    // Phase 8: Social copy section
+    '<div class="panel-section" id="social-copy-section-wrapper">' +
+    '<div class="panel-section-title">Social Copy</div>' +
+    socialCopySection +
+    '</div>';
+
+  // Phase 8: Load video and social copy asynchronously
+  loadVideoPlayer(order.order_id, order.brand);
+  loadSocialCopy(order.order_id, order.brand);
+}
+
+// =============================================================================
+// Phase 8: Video Player & Social Copy Functions
+// =============================================================================
+
+// Video player state
+var videoState = {
+  currentOrderId: null,
+  currentBrand: null,
+  videos: [],
+  currentType: null, // 'ugc' or 'reel'
+};
+
+// Load video player
+function loadVideoPlayer(orderId, brand) {
+  videoState.currentOrderId = orderId;
+  videoState.currentBrand = brand;
+  
+  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      videoState.videos = data.videos || [];
+      renderVideoPlayer(data);
+    })
+    .catch(function(err) {
+      console.error('Video fetch error:', err);
+      document.getElementById('video-player-section').innerHTML =
+        '<div style="color:var(--danger);font-size:0.75rem;text-align:center;padding:2rem;">Failed to load videos</div>';
+    });
+}
+
+// Render video player UI
+function renderVideoPlayer(data) {
+  var container = document.getElementById('video-player-section');
+  if (!container) return;
+  
+  var videos = data.videos || [];
+  var isUploaded = data.drive_uploaded;
+  var driveUrl = data.drive_url;
+  
+  if (videos.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:2rem;">' +
+      '<p>No videos available yet</p>' +
+      '<p style="margin-top:0.5rem">Videos will appear after pipeline run completes</p>' +
+      '</div>';
+    return;
+  }
+  
+  // Determine initial video type
+  var hasUgc = videos.some(function(v) { return v.type === 'ugc'; });
+  var hasReel = videos.some(function(v) { return v.type === 'reel'; });
+  videoState.currentType = hasUgc ? 'ugc' : (hasReel ? 'reel' : null);
+  
+  // Build video type selector
+  var typeSelector = '';
+  if (hasUgc || hasReel) {
+    typeSelector = '<div class="video-type-selector">';
+    if (hasUgc) {
+      typeSelector += '<button class="btn-video-type' + (videoState.currentType === 'ugc' ? ' active' : '') + '" data-type="ugc">UGC Reel' + (hasReaction ? ' (Reaction)' : '') + '</button>';
+    }
+    if (hasReel) {
+      typeSelector += '<button class="btn-video-type' + (videoState.currentType === 'reel' ? ' active' : '') + '" data-type="reel">Standard Reel</button>';
+    }
+    typeSelector += '</div>';
+  }
+  
+  // Find current video
+  var currentVideo = videos.find(function(v) { return v.type === videoState.currentType; });
+  
+  // Video player
+  var playerHtml = '<div class="video-player-container">';
+  if (currentVideo) {
+    playerHtml += '<video class="video-player" controls preload="metadata">' +
+      '<source src="' + esc(currentVideo.path) + '" type="video/mp4">' +
+      'Your browser does not support the video tag.' +
+      '</video>';
+  } else {
+    playerHtml += '<div class="video-placeholder">No video available</div>';
+  }
+  playerHtml += '</div>';
+  
+  // Video metadata
+  var metaHtml = '';
+  if (currentVideo) {
+    var sizeKb = Math.round(currentVideo.size / 1024);
+    var created = fmtDate(currentVideo.created_at);
+    metaHtml = '<div style="margin-top:0.5rem;font-size:0.7rem;color:var(--text-dim);">' +
+      '<strong>File:</strong> ' + esc(currentVideo.filename) + ' | ' +
+      '<strong>Size:</strong> ' + sizeKb + ' KB | ' +
+      '<strong>Created:</strong> ' + created +
+      '</div>';
+  }
+  
+  // Upload status and actions
+  var actionsHtml = '';
+  if (isUploaded) {
+    actionsHtml = '<div style="margin-top:0.75rem;padding:0.5rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:4px;">' +
+      '<span style="color:var(--success);font-size:0.75rem;font-weight:600;">✓ Uploaded to Drive</span>' +
+      (driveUrl ? '<br><a href="' + esc(driveUrl) + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:0.7rem;">Open in Drive</a>' : '') +
+      '</div>';
+  } else {
+    actionsHtml = '<div class="video-actions">' +
+      '<button class="btn-approve-video" onclick="approveVideo(\'' + esc(orderId) + '\',\'' + esc(brand) + '\')">&#x2713; Approve for Drive Upload</button>' +
+      '<button class="btn-reject-video" onclick="rejectVideo(\'' + esc(orderId) + '\',\'' + esc(brand) + '\')">&#x2715; Reject Video</button>' +
+      '</div>';
+  }
+  
+  container.innerHTML = typeSelector + playerHtml + metaHtml + actionsHtml;
+  
+  // Add event listeners for type selector
+  var typeBtns = container.querySelectorAll('.btn-video-type');
+  typeBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var newType = btn.dataset.type;
+      if (newType !== videoState.currentType) {
+        videoState.currentType = newType;
+        renderVideoPlayer(data); // Re-render with new type
+      }
+    });
+  });
+}
+
+// Approve video for Drive upload
+function approveVideo(orderId, brand) {
+  if (!confirm('Approve this video for Drive upload? This will mark it as ready for upload.')) return;
+  
+  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ video_type: videoState.currentType })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      showToast('Video approved for Drive upload', 'success');
+      // Reload panel to show updated status
+      openPanel(orderId, brand);
+    } else {
+      throw new Error(data.error || 'Failed to approve video');
+    }
+  })
+  .catch(function(err) {
+    showToast('Error: ' + err.message, 'error');
+  });
+}
+
+// Reject video
+function rejectVideo(orderId, brand) {
+  var reason = prompt('Please provide a reason for rejecting this video (optional):');
+  if (reason === null) return; // User cancelled
+  
+  fetch('/api/video/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/reject', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: reason || 'No reason provided' })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      showToast('Video rejected - order marked as failed', 'success');
+      // Reload panel to show updated status
+      openPanel(orderId, brand);
+    } else {
+      throw new Error(data.error || 'Failed to reject video');
+    }
+  })
+  .catch(function(err) {
+    showToast('Error: ' + err.message, 'error');
+  });
+}
+
+// Social copy state
+var socialCopyState = {
+  currentOrderId: null,
+  currentBrand: null,
+  copy: null,
+  currentPlatform: null,
+};
+
+// Load social copy
+function loadSocialCopy(orderId, brand) {
+  socialCopyState.currentOrderId = orderId;
+  socialCopyState.currentBrand = brand;
+  
+  fetch('/api/social-copy/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      socialCopyState.copy = data.copy;
+      renderSocialCopy(data);
+    })
+    .catch(function(err) {
+      console.error('Social copy fetch error:', err);
+      document.getElementById('social-copy-section').innerHTML =
+        '<div style="color:var(--danger);font-size:0.75rem;text-align:center;padding:2rem;">Failed to load social copy</div>';
+    });
+}
+
+// Render social copy panel
+function renderSocialCopy(data) {
+  var container = document.getElementById('social-copy-section');
+  if (!container) return;
+  
+  var copy = data.copy;
+  if (!copy) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;text-align:center;padding:2rem;">No social copy available</div>';
+    return;
+  }
+  
+  // Set initial platform
+  socialCopyState.currentPlatform = 'youtube';
+  
+  // Build tabs
+  var tabs = '<div class="social-copy-tabs">' +
+    '<button class="social-copy-tab active" data-platform="youtube">YouTube</button>' +
+    '<button class="social-copy-tab" data-platform="tiktok">TikTok</button>' +
+    '<button class="social-copy-tab" data-platform="instagram">Instagram</button>' +
+    '<button class="social-copy-tab" data-platform="x">X / Twitter</button>' +
+    '</div>';
+  
+  // Build content
+  var content = '<div class="social-copy-content" id="social-copy-content">' +
+    renderPlatformCopy('youtube', copy) +
+    '</div>';
+  
+  container.innerHTML = tabs + content;
+  
+  // Add event listeners for tabs
+  var tabBtns = container.querySelectorAll('.social-copy-tab');
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var platform = btn.dataset.platform;
+      socialCopyState.currentPlatform = platform;
+      
+      // Update active tab
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      
+      // Render content
+      var contentContainer = document.getElementById('social-copy-content');
+      if (contentContainer) {
+        contentContainer.innerHTML = renderPlatformCopy(platform, copy);
+      }
+    });
+  });
+}
+
+// Render copy for a specific platform
+function renderPlatformCopy(platform, copy) {
+  var platformCopy = copy[platform];
+  if (!platformCopy) return '<div style="color:var(--text-dim);padding:1rem;">No copy for this platform</div>';
+  
+  var html = '';
+  
+  if (platform === 'youtube') {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Title</div>' +
+      '<div class="social-copy-text">' + esc(platformCopy.title) + '</div>' +
+      '</div>';
+    
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Description</div>' +
+      '<div class="social-copy-text">' + esc(platformCopy.description) + '</div>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'youtube\', \'description\')">Copy to Clipboard</button>' +
+      '</div>';
+    
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Tags</div>' +
+      '<div class="hashtags">' + esc(platformCopy.tags.join(', ')) + '</div>' +
+      '</div>';
+  }
+  
+  if (platform === 'tiktok') {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Caption</div>' +
+      '<div class="social-copy-text">' + esc(platformCopy.caption) + '</div>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'tiktok\', \'caption\')">Copy to Clipboard</button>' +
+      '</div>';
+    
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Hashtags</div>' +
+      '<div class="hashtags">' + esc(platformCopy.hashtags.join(' ')) + '</div>' +
+      '</div>';
+  }
+  
+  if (platform === 'instagram') {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Caption</div>' +
+      '<div class="social-copy-text">' + esc(platformCopy.caption) + '</div>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'instagram\', \'caption\')">Copy to Clipboard</button>' +
+      '</div>';
+    
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Hashtags</div>' +
+      '<div class="hashtags">' + esc(platformCopy.hashtags.join(' ')) + '</div>' +
+      '</div>';
+    
+    if (platformCopy.alt_text) {
+      html += '<div class="social-copy-section">' +
+        '<div class="social-copy-label">Alt Text</div>' +
+        '<div class="social-copy-text">' + esc(platformCopy.alt_text) + '</div>' +
+        '</div>';
+    }
+  }
+  
+  if (platform === 'x') {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Tweet</div>' +
+      '<div class="social-copy-text">' + esc(platformCopy.tweet) + '</div>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'x\', \'tweet\')">Copy to Clipboard</button>' +
+      '</div>';
+    
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Hashtags</div>' +
+      '<div class="hashtags">' + esc(platformCopy.hashtags.join(' ')) + '</div>' +
+      '</div>';
+  }
+  
+  // Audio suggestion and posting notes for all platforms
+  if (platformCopy.audio_suggestion) {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Audio Suggestion</div>' +
+      '<div class="social-copy-text" style="font-size:0.75rem;">' + esc(platformCopy.audio_suggestion) + '</div>' +
+      '</div>';
+  }
+  
+  if (platformCopy.posting_notes) {
+    html += '<div class="social-copy-section">' +
+      '<div class="social-copy-label">Posting Notes</div>' +
+      '<div class="social-copy-text" style="font-size:0.75rem;">' + esc(platformCopy.posting_notes) + '</div>' +
+      '</div>';
+  }
+  
+  return html;
+}
+
+// Copy to clipboard
+function copyToClipboard(platform, field) {
+  var copy = socialCopyState.copy;
+  if (!copy || !copy[platform]) return;
+  
+  var textToCopy = '';
+  
+  if (platform === 'youtube') {
+    textToCopy = copy.youtube.description + '\n\nTags: ' + copy.youtube.tags.join(', ');
+  } else if (platform === 'tiktok') {
+    textToCopy = copy.tiktok.caption + '\n\n' + copy.tiktok.hashtags.join(' ');
+  } else if (platform === 'instagram') {
+    textToCopy = copy.instagram.caption + '\n\n' + copy.instagram.hashtags.join(' ');
+  } else if (platform === 'x') {
+    textToCopy = copy.x.tweet + '\n\n' + copy.x.hashtags.join(' ');
+  }
+  
+  // Use Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(function() {
+      showToast('Copied to clipboard!', 'success');
+    }).catch(function(err) {
+      console.error('Clipboard error:', err);
+      fallbackCopyToClipboard(textToCopy);
+    });
+  } else {
+    fallbackCopyToClipboard(textToCopy);
+  }
+}
+
+// Fallback clipboard copy for older browsers
+function fallbackCopyToClipboard(text) {
+  var textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+  textArea.style.padding = '0';
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+  textArea.style.background = 'transparent';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    var successful = document.execCommand('copy');
+    if (successful) {
+      showToast('Copied to clipboard!', 'success');
+    } else {
+      showToast('Failed to copy', 'error');
+    }
+  } catch (err) {
+    console.error('Fallback clipboard error:', err);
+    showToast('Failed to copy', 'error');
+  }
+  
+  document.body.removeChild(textArea);
+}
+
+// Phase 7: Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Pipeline control
+  var runBtn = document.getElementById('btn-run-pipeline');
+  if (runBtn) {
+    runBtn.addEventListener('click', runPipeline);
+  }
+  
+  // Run history toggle
+  var toggleBtn = document.getElementById('btn-toggle-history');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', toggleRunHistory);
+  }
+  
+  // Initial fetch of run history
+  fetchRunHistory();
+  
+  // Connect to SSE stream
+  connectPipelineSSE();
+});
 </script>
 </body>
 </html>
@@ -1404,5 +2857,16 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`    POST /api/orders/:orderId/:brand/status`);
   console.log(`    POST /api/batch/status`);
   console.log(`    POST /api/consent/send-batch`);
-  console.log(`    GET  /api/production-runs\n`);
+  console.log(`    GET  /api/consent/status/:orderId/:brand`);
+  console.log(`    POST /api/consent/resend/:orderId/:brand`);
+  console.log(`    GET  /api/production-runs`);
+  console.log(`    POST /api/pipeline/run`);
+  console.log(`    GET  /api/pipeline/status/:runId`);
+  console.log(`    GET  /api/pipeline/sse`);
+  console.log(`    GET  /api/pipeline/history`);
+  console.log(`    GET  /api/video/:orderId/:brand`);
+  console.log(`    GET  /api/video/file/:brand/:orderId/:filename`);
+  console.log(`    POST /api/video/:orderId/:brand/approve`);
+  console.log(`    POST /api/video/:orderId/:brand/reject`);
+  console.log(`    GET  /api/social-copy/:orderId/:brand\n`);
 });

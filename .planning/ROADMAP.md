@@ -153,11 +153,11 @@ Plans:
   3. User can trigger the daily pipeline run from the dashboard with one button and see stage-by-stage progress stream live as the pipeline runs (no page refresh)
   4. User can see the current run summary (orders attempted, videos uploaded, failures) after a run completes
   5. User can see a history of recent pipeline runs with outcome summaries to diagnose patterns or failures
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [x] 07-01: Real-time consent tracking API + UI (consent status endpoint, resend email, timeline view)
+- [x] 07-02: Pipeline control with live progress (trigger endpoint, SSE streaming, run history)
 
 ### Phase 8: Video Review and Social Copy
 **Goal**: Luis can play, review, approve, or reject built videos directly in the browser and read social copy for any completed order without opening Drive
@@ -169,11 +169,11 @@ Plans:
   3. User can review both the UGC reel and the standard reel for the same order independently -- switching between them in the same player view
   4. User can open a social copy panel for any completed order and read the generated copy for all four platforms (YouTube, TikTok, Instagram, X)
   5. User can copy any platform's social copy to clipboard with one click
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [x] 08-01: In-browser video player with approve/reject (HTML5 player, type selector, upload status)
+- [x] 08-02: Social copy panel per platform (tabs, copy display, clipboard copy)
 
 ## v2.0 Progress
 
@@ -182,7 +182,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. Dashboard Foundation | v2.0 | Complete    | 2026-03-01 | - |
-| 6. Illustration Approval and Consent Dispatch | v2.0 | 0/2 | Not started | - |
-| 7. Consent Tracking and Pipeline Control | v2.0 | 0/2 | Not started | - |
-| 8. Video Review and Social Copy | v2.0 | 0/2 | Not started | - |
+| 5. Dashboard Foundation | v2.0 | 2/2 | Complete | 2026-03-01 |
+| 6. Illustration Approval and Consent Dispatch | v2.0 | 2/2 | Complete | 2026-03-01 |
+| 7. Consent Tracking and Pipeline Control | v2.0 | 2/2 | Complete | 2026-03-02 |
+| 8. Video Review and Social Copy | v2.0 | 2/2 | Complete | 2026-03-02 |

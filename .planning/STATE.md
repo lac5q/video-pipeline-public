@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 
 ## Current Position
 
-Phase: 6 of 8 (Phase 6 complete)
-Plan: 06-02
-Status: Phase 6 complete — ready to plan Phase 7
-Last activity: 2026-03-01 — Phase 6 execute complete (approval UI + consent dispatch)
+Phase: 8 of 8 (Phase 8 complete — v2.0 COMPLETE!)
+Plan: 08-02
+Status: Phase 8 complete — v2.0 Web Dashboard is production-ready
+Last activity: 2026-03-02 — Phase 8 execute complete (video player + social copy shipped)
 
-Progress: [=====-----] 50% (2/4 v2.0 phases complete)
+Progress: [████████] 100% (4/4 v2.0 phases complete)
 
 ## Performance Metrics
 
@@ -45,7 +45,16 @@ Progress: [=====-----] 50% (2/4 v2.0 phases complete)
 | 03 | 3 | 12min | 4min |
 | 04 | 1 | 5min | 5min |
 
-*v2.0 metrics will be tracked once phases begin*
+**v2.0 Velocity (complete):**
+- Total plans completed: 8 (05-01, 05-02, 06-01, 06-02, 07-01, 07-02, 08-01, 08-02)
+- Total execution time: ~3.5 hours
+- Average per phase: ~1 hour
+- Phase 5: ~1 hour (Kanban board, filters, detail panel)
+- Phase 6: ~1 hour (approval UI, consent dispatch, lightbox, toasts)
+- Phase 7: ~2 hours (consent tracking, pipeline control, SSE streaming)
+- Phase 8: ~1.5 hours (video player, social copy, clipboard)
+
+*v2.0 complete — ready for production deployment*
 
 ## Accumulated Context
 
@@ -66,10 +75,14 @@ Progress: [=====-----] 50% (2/4 v2.0 phases complete)
 - [Roadmap]: Phase 6 groups APPR-01..04 + UCONS-01..02 (inspect illustrations, dispatch consent)
 - [Roadmap]: Phase 7 groups UCONS-03..04 + PIPE-01..04 (live status + pipeline control)
 - [Roadmap]: Phase 8 groups VID-01..04 + COPY-01..02 (video review + social copy)
+- [07-01]: Leverage existing consent_log table — no DB migrations needed
+- [07-02]: Use Server-Sent Events (not WebSockets) for live pipeline progress — simpler, sufficient
+- [08-01]: HTML5 native video player — no custom player library needed
+- [08-02]: Generate social copy on-demand from lib/social-copy.js — no storage needed
 
 ### Pending Todos
 
-None yet.
+None — v2.0 COMPLETE! All 4 phases shipped. Ready for production deployment.
 
 ### Blockers/Concerns
 
