@@ -140,10 +140,10 @@ const LOGIN_HTML = `<!DOCTYPE html>
 <script>
 document.getElementById('login-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  
-  var username = document.getElementById('username').value;
-  var password = document.getElementById('password').value;
-  
+
+  var username = document.getElementById('login-username').value;
+  var password = document.getElementById('login-password').value;
+
   fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -158,11 +158,9 @@ document.getElementById('login-form').addEventListener('submit', function(e) {
     localStorage.setItem('pipeline_token', data.token);
     window.location.href = '/';
   })
-  .catch(function() {
-    document.getElementById('error-message').style.display = 'block';
-  })
   .catch(function(err) {
-    document.getElementById('error-message').style.display = 'block';
+    console.error('Login error:', err);
+    document.getElementById('login-error').style.display = 'block';
   });
 });
 
