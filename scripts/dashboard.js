@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const multer = require('multer');
 
 const PIPELINE_ROOT =
   process.env.PIPELINE_ROOT || path.resolve(__dirname, '..');
@@ -2843,6 +2844,28 @@ app.get('/orders', (req, res) => res.type('html').send(HTML));
 app.get('/orders/:id', (req, res) => res.type('html').send(HTML));
 app.get('/batch', (req, res) => res.type('html').send(HTML));
 app.get('/pipeline', (req, res) => res.type('html').send(HTML));
+
+// Temporary database upload endpoint (remove after initial setup)
+const upload = multer({ dest: '/tmp/' });
+
+app.post('/admin/upload-db', upload.single('database'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No database file provided' });
+  }
+
+  const fs = require('fs');
+  const targetPath = process.env.DB_PATH || '/data/pipeline.db';
+  const tempPath = req.file.path;
+
+  try {
+    // Move uploaded file to target location
+    fs.renameSync(tempPath, targetPath);
+    res.json({ success: true, message: `Database uploaded to ${targetPath}` });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Mount consent public routes (token-based consent flow)
 app.use(consentApp);
