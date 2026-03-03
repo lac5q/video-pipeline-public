@@ -6,14 +6,15 @@ echo "=== Video Pipeline Dashboard Startup ==="
 export DB_PATH="${DB_PATH:-/data/pipeline.db}"
 mkdir -p "$(dirname "$DB_PATH")"
 
-# Copy the initial database if it doesn't exist
-if [ ! -f "$DB_PATH" ]; then
-  echo "Database not found, copying initial database..."
-  cp ./data/pipeline.db "$DB_PATH" 2>/dev/null || echo "No initial database to copy"
+# Check if database exists and has orders
+if [ ! -f "$DB_PATH" ] || [ $(sqlite3 "$DB_PATH" "SELECT count(*) FROM orders;" 2>/dev/null || echo 0) -eq 0 ]; then
+  echo "Database is empty or doesn't exist, initializing with sample data..."
+  node scripts/init-sample-data.js
+else
+  echo "Database exists with data, proceeding with import..."
+  echo "Running data import (DB_PATH=$DB_PATH)..."
+  timeout 30 node scripts/import-tracking-sheets.js || echo "Import failed, continuing with existing data"
 fi
 
-echo "Running data import (DB_PATH=$DB_PATH)..."
-timeout 30 node scripts/import-tracking-sheets.js || echo "Import failed, starting with existing database"
-
-echo "Starting dashboard server (v2)..."
+echo "Starting dashboard server..."
 exec node scripts/dashboard.js
