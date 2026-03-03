@@ -2845,6 +2845,33 @@ app.get('/orders/:id', (req, res) => res.type('html').send(HTML));
 app.get('/batch', (req, res) => res.type('html').send(HTML));
 app.get('/pipeline', (req, res) => res.type('html').send(HTML));
 
+// Debug endpoint to check database status
+app.get('/debug/db-status', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const dbPath = process.env.DB_PATH || '/data/pipeline.db';
+  
+  const status = {
+    dbPath: dbPath,
+    dbExists: fs.existsSync(dbPath),
+    fileSize: null,
+    ordersCount: null
+  };
+  
+  if (status.dbExists) {
+    try {
+      status.fileSize = fs.statSync(dbPath).size;
+      const db = require('better-sqlite3')(dbPath);
+      status.ordersCount = db.prepare('SELECT COUNT(*) as count FROM orders').get().count;
+      db.close();
+    } catch (e) {
+      status.error = e.message;
+    }
+  }
+  
+  res.json(status);
+});
+
 // Mount consent public routes (token-based consent flow)
 app.use(consentApp);
 
