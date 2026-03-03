@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "start": "node scripts/dashboard.js",
+    "start": "bash scripts/railway-start.sh",
     "import": "node scripts/import-tracking-sheets.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

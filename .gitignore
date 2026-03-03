@@ -34,6 +34,17 @@ orders/*/tmp_*
 .env
 .env.local
 
+# SQLite database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Logs
+logs/
+
+# Playwright MCP
+.playwright-mcp/
+
 # Ensure brand configs and product catalog are tracked (not ignored)
 !brands/*.json
 !products.json
