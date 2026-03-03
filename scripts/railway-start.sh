@@ -15,5 +15,5 @@ fi
 echo "Running data import (DB_PATH=$DB_PATH)..."
 timeout 30 node scripts/import-tracking-sheets.js || echo "Import failed, starting with existing database"
 
-echo "Starting dashboard server..."
+echo "Starting dashboard server (v2)..."
 exec node scripts/dashboard.js
