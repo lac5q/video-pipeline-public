@@ -6,8 +6,9 @@ const { getSheetData } = require('../lib/sheets-client');
 const { getDatabase } = require('../lib/db');
 
 // === Spreadsheet configuration ===
+// Configuration can be overridden by environment variables for flexibility
 
-const SHEETS = {
+const DEFAULT_SHEETS = {
   turnedyellow: {
     spreadsheetId: '1KFToq2s9Pul4e1qQ5UcGP9XR0IIavSaraJbyf-4mJgI',
     range: 'Customer Reaction Videos!A1:U',
@@ -70,6 +71,24 @@ const SHEETS = {
     },
   },
 };
+
+// Allow dynamic configuration via environment variables
+function loadSpreadsheetConfig() {
+  const configJson = process.env.SPREADSHEET_CONFIG;
+  if (configJson) {
+    try {
+      const customConfig = JSON.parse(configJson);
+      console.log('Using custom spreadsheet configuration from environment');
+      return { ...DEFAULT_SHEETS, ...customConfig };
+    } catch (err) {
+      console.error('Error parsing SPREADSHEET_CONFIG:', err.message);
+      console.log('Falling back to default configuration');
+    }
+  }
+  return DEFAULT_SHEETS;
+}
+
+const SHEETS = loadSpreadsheetConfig();
 
 /**
  * Extract order ID from a filename by stripping the extension.
@@ -237,12 +256,29 @@ async function main() {
   const db = getDatabase();
 
   try {
-    const tyCount = await importSheet(db, SHEETS.turnedyellow);
-    const mmjCount = await importSheet(db, SHEETS.makemejedi);
+    let totalCount = 0;
+    const results = [];
+
+    // Import from all configured sheets
+    for (const [brandKey, config] of Object.entries(SHEETS)) {
+      try {
+        const count = await importSheet(db, config);
+        results.push({ brand: config.brand, count });
+        totalCount += count;
+        console.log(`  Imported ${count} ${config.brand} orders`);
+      } catch (err) {
+        console.error(`  Error importing ${config.brand}:`, err.message);
+      }
+    }
 
     console.log('');
     console.log(`=== Import complete ===`);
-    console.log(`  Imported ${tyCount} TY orders, ${mmjCount} MMJ orders`);
+    console.log(`  Total imported: ${totalCount} orders from ${results.length} brands`);
+    results.forEach(result => {
+      if (result.count > 0) {
+        console.log(`    ${result.count} ${result.brand} orders`);
+      }
+    });
   } finally {
     db.close();
   }
