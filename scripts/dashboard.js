@@ -2,8 +2,13 @@
 
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const http = require('http');
 const express = require('express');
 const multer = require('multer');
+
+// In-memory cache: orderId+brand → resolved illustration image URL
+const illustrationCache = new Map();
 
 const PIPELINE_ROOT =
   process.env.PIPELINE_ROOT || path.resolve(__dirname, '..');
@@ -70,6 +75,47 @@ app.post('/api/admin/clean-urls', (req, res) => {
   }
 });
 
+// GET /api/orders/:orderId/:brand/illustration-img
+// Fetches the order's oms_url page server-side, extracts the illustration image URL,
+// and redirects to it. Results are cached in memory.
+app.get('/api/orders/:orderId/:brand/illustration-img', (req, res) => {
+  const { orderId, brand } = req.params;
+  const cacheKey = `${brand}:${orderId}`;
+
+  if (illustrationCache.has(cacheKey)) {
+    return res.redirect(302, illustrationCache.get(cacheKey));
+  }
+
+  const db = getDb();
+  let omsUrl;
+  try {
+    const order = db.prepare('SELECT oms_url FROM orders WHERE order_id = ? AND brand = ?').get(orderId, brand);
+    omsUrl = order && order.oms_url;
+  } finally {
+    db.close();
+  }
+
+  if (!omsUrl || !/^https?:\/\//i.test(omsUrl)) {
+    return res.status(404).json({ error: 'No illustration URL for this order' });
+  }
+
+  const mod = omsUrl.startsWith('https') ? https : http;
+  mod.get(omsUrl, { timeout: 8000 }, (pageRes) => {
+    let html = '';
+    pageRes.on('data', chunk => { html += chunk; });
+    pageRes.on('end', () => {
+      // Extract first absolute image URL that looks like the illustration (not a logo/icon)
+      const imgMatch = html.match(/https?:\/\/[^"'\s]+\.(?:jpg|jpeg|png|webp)(?:\?[^"'\s]*)?/i);
+      if (!imgMatch) return res.status(404).json({ error: 'Could not find illustration image' });
+      const imgUrl = imgMatch[0];
+      illustrationCache.set(cacheKey, imgUrl);
+      res.redirect(302, imgUrl);
+    });
+  }).on('error', (err) => {
+    res.status(502).json({ error: 'Failed to fetch illustration page: ' + err.message });
+  });
+});
+
 app.get('/healthz', (_req, res) => {
   try {
     const db = getDb();
@@ -117,7 +163,8 @@ function classifyOrderToLane(order) {
 
   if (ps === 'uploaded') return 'uploaded';
   if (ps === 'built') return 'video_built';
-  if (cs === 'approved') return 'consent_approved';
+  if (ps === 'approved') return 'consent_approved';
+  if (cs === 'approved' || cs === 'pre_approved') return 'consent_approved';
   if (cs === 'pending') return 'consent_pending';
   return 'candidates';
 }
@@ -1796,10 +1843,12 @@ function renderCard(order, laneId) {
   var showPlay = laneId === 'video_built' || laneId === 'uploaded';
   var score = order.computed_score || order.score || 0;
 
-  var rawUrl = order.oms_url || order.illustration_url || order.photos_url || '';
-  var illustrationUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : '';
-  var thumbHtml = illustrationUrl
-    ? '<img class="card-thumbnail" src="' + esc(illustrationUrl) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+  var hasOmsUrl = order.oms_url && /^https?:\/\//i.test(order.oms_url);
+  var thumbSrc = hasOmsUrl
+    ? '/api/orders/' + encodeURIComponent(order.order_id) + '/' + encodeURIComponent(order.brand) + '/illustration-img'
+    : (order.illustration_url && /^https?:\/\//i.test(order.illustration_url) ? order.illustration_url : '');
+  var thumbHtml = thumbSrc
+    ? '<img class="card-thumbnail" src="' + esc(thumbSrc) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
     : '<div class="card-thumb-placeholder">&#128444;</div>';
 
   var brandDisplay = esc(order.brand || '-');
@@ -1960,8 +2009,6 @@ function closeLightbox() {
 
 // ── Phase 6: Approve single order ──
 function approveOrder(orderId, brand) {
-  if (!confirm('Approve this order and start the video production pipeline?')) return;
-  
   fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
