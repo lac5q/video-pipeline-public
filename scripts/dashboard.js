@@ -2076,7 +2076,9 @@ document.getElementById('status-filters').addEventListener('click', function(e) 
 
 // Init
 renderStatusPills();
-fetchBrands().then(function() { return fetchBoard(); });
+fetchBrands();
+fetchBoard();
+fetchRunHistory();
 
 // Polling every 30s (skip if tab hidden)
 state.pollTimer = setInterval(function() {
