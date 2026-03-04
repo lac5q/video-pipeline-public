@@ -1793,7 +1793,7 @@ function renderBoard(data) {
       var candidateRefs = JSON.stringify(laneData.orders.map(function(o) {
         return { order_id: o.order_id, brand: o.brand };
       })).replace(/'/g, '&#39;');
-      laneHeaderCta = '<button class="btn-batch-approve" data-refs=\'' + candidateRefs + '\' data-count="' + laneData.count + '">Approve All (' + laneData.count + ')</button>';
+      laneHeaderCta = '<button class="btn-batch-approve" data-refs=\\'' + candidateRefs + '\\' data-count="' + laneData.count + '">Approve All (' + laneData.count + ')</button>';
     }
     if (lane.id === 'consent_pending' && laneData.count > 0) {
       laneHeaderCta = '<button class="btn-send-consent" data-count="' + laneData.count + '">Send Consent Emails</button>';
@@ -2367,8 +2367,8 @@ function renderPanelContent(data) {
   // Phase 7: Resend button for pending/declined
   var resendButton = '';
   if ((order.consent_status === 'pending' || order.consent_status === 'denied') && order.customer_email) {
-    resendButton = '<button class="btn-resend-consent" onclick="resendConsentEmail(\'' + 
-      esc(order.order_id) + '\',\'' + esc(order.brand) + '\')">Resend Consent Email</button>';
+    resendButton = '<button class="btn-resend-consent" onclick="resendConsentEmail(&#39;' +
+      esc(order.order_id) + '&#39;,&#39;' + esc(order.brand) + '&#39;)">Resend Consent Email</button>';
   }
 
   var driveSection = order.drive_url
@@ -2531,8 +2531,8 @@ function renderVideoPlayer(data) {
       '</div>';
   } else {
     actionsHtml = '<div class="video-actions">' +
-      '<button class="btn-approve-video" onclick="approveVideo(\'' + esc(orderId) + '\',\'' + esc(brand) + '\')">&#x2713; Approve for Drive Upload</button>' +
-      '<button class="btn-reject-video" onclick="rejectVideo(\'' + esc(orderId) + '\',\'' + esc(brand) + '\')">&#x2715; Reject Video</button>' +
+      '<button class="btn-approve-video" onclick="approveVideo(&#39;' + esc(orderId) + '&#39;,&#39;' + esc(brand) + '&#39;)">&#x2713; Approve for Drive Upload</button>' +
+      '<button class="btn-reject-video" onclick="rejectVideo(&#39;' + esc(orderId) + '&#39;,&#39;' + esc(brand) + '&#39;)">&#x2715; Reject Video</button>' +
       '</div>';
   }
   
@@ -2691,7 +2691,7 @@ function renderPlatformCopy(platform, copy) {
     html += '<div class="social-copy-section">' +
       '<div class="social-copy-label">Description</div>' +
       '<div class="social-copy-text">' + esc(platformCopy.description) + '</div>' +
-      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'youtube\', \'description\')">Copy to Clipboard</button>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(&#39;youtube&#39;, &#39;description&#39;)">Copy to Clipboard</button>' +
       '</div>';
     
     html += '<div class="social-copy-section">' +
@@ -2704,7 +2704,7 @@ function renderPlatformCopy(platform, copy) {
     html += '<div class="social-copy-section">' +
       '<div class="social-copy-label">Caption</div>' +
       '<div class="social-copy-text">' + esc(platformCopy.caption) + '</div>' +
-      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'tiktok\', \'caption\')">Copy to Clipboard</button>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(&#39;tiktok&#39;, &#39;caption&#39;)">Copy to Clipboard</button>' +
       '</div>';
     
     html += '<div class="social-copy-section">' +
@@ -2717,7 +2717,7 @@ function renderPlatformCopy(platform, copy) {
     html += '<div class="social-copy-section">' +
       '<div class="social-copy-label">Caption</div>' +
       '<div class="social-copy-text">' + esc(platformCopy.caption) + '</div>' +
-      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'instagram\', \'caption\')">Copy to Clipboard</button>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(&#39;instagram&#39;, &#39;caption&#39;)">Copy to Clipboard</button>' +
       '</div>';
     
     html += '<div class="social-copy-section">' +
@@ -2737,7 +2737,7 @@ function renderPlatformCopy(platform, copy) {
     html += '<div class="social-copy-section">' +
       '<div class="social-copy-label">Tweet</div>' +
       '<div class="social-copy-text">' + esc(platformCopy.tweet) + '</div>' +
-      '<button class="btn-copy-clipboard" onclick="copyToClipboard(\'x\', \'tweet\')">Copy to Clipboard</button>' +
+      '<button class="btn-copy-clipboard" onclick="copyToClipboard(&#39;x&#39;, &#39;tweet&#39;)">Copy to Clipboard</button>' +
       '</div>';
     
     html += '<div class="social-copy-section">' +
