@@ -1956,6 +1956,8 @@ function closeLightbox() {
 
 // ── Phase 6: Approve single order ──
 function approveOrder(orderId, brand) {
+  if (!confirm('Approve this order and start the video production pipeline?')) return;
+  
   fetch('/api/orders/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(brand) + '/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1964,8 +1966,28 @@ function approveOrder(orderId, brand) {
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
       if (data.success) {
-        showToast('Approved \u2014 moving to Consent Pending', 'success');
-        fetchBoard();
+        showToast('Approved — starting video production...', 'success');
+        // Automatically trigger the pipeline for this brand
+        fetch('/api/pipeline/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand: brand, limit: 1 })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(pipelineData) {
+          if (pipelineData.success) {
+            showToast('Pipeline started for ' + brand, 'success');
+            fetchBoard();
+          } else {
+            showToast('Approved but pipeline failed to start', 'warning');
+            fetchBoard();
+          }
+        })
+        .catch(function(err) {
+          console.error('Pipeline start error:', err);
+          showToast('Approved (pipeline start failed - you can run it manually)', 'warning');
+          fetchBoard();
+        });
       } else {
         showToast('Error approving order', 'error');
       }
@@ -1994,7 +2016,7 @@ function rejectOrder(orderId, brand) {
 
 // ── Phase 6: Batch approve all candidates ──
 function batchApproveAll(orders, count) {
-  if (!confirm('Approve ' + count + ' candidates? This will queue them for consent emails.')) return;
+  if (!confirm('Approve ' + count + ' candidates and start the video production pipeline?')) return;
   fetch('/api/batch/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2003,8 +2025,28 @@ function batchApproveAll(orders, count) {
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
       if (data.success) {
-        showToast(data.updated + ' orders approved', 'success');
-        fetchBoard();
+        showToast(data.updated + ' orders approved — starting pipeline...', 'success');
+        // Automatically trigger the pipeline
+        fetch('/api/pipeline/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: data.updated })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(pipelineData) {
+          if (pipelineData.success) {
+            showToast('Pipeline started for ' + data.updated + ' orders', 'success');
+            fetchBoard();
+          } else {
+            showToast('Approved but pipeline failed to start', 'warning');
+            fetchBoard();
+          }
+        })
+        .catch(function(err) {
+          console.error('Pipeline start error:', err);
+          showToast('Approved (pipeline start failed - you can run it manually)', 'warning');
+          fetchBoard();
+        });
       } else {
         showToast('Error in batch approve', 'error');
       }
