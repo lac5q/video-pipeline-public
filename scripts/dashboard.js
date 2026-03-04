@@ -2941,13 +2941,8 @@ function fallbackCopyToClipboard(text) {
 
 // Serve HTML for all non-API routes
 app.get('/', (req, res) => {
-  // Check if it's a direct navigation (not API call)
-  const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
-  if (acceptsHtml) {
-    res.type('html').send(HTML);
-  } else {
-    res.json({ error: 'Use browser to access dashboard' });
-  }
+  // Always serve HTML for root route
+  res.type('html').send(HTML);
 });
 app.get('/orders', (req, res) => res.type('html').send(HTML));
 app.get('/orders/:id', (req, res) => res.type('html').send(HTML));
