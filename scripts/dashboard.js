@@ -2872,6 +2872,200 @@ app.get('/debug/db-status', (req, res) => {
   res.json(status);
 });
 
+// Admin endpoint to add orders manually
+app.post('/admin/add-order', (req, res) => {
+  const { order_id, brand, customer_email, customer_name, illustration_url, photo_urls } = req.body;
+  
+  if (!order_id || !brand) {
+    return res.status(400).json({ error: 'order_id and brand are required' });
+  }
+
+  try {
+    const db = require('better-sqlite3')(process.env.DB_PATH || require(path.join(PIPELINE_ROOT, 'lib', 'db')).DB_PATH);
+    
+    // Insert or update the order
+    const stmt = db.prepare(`
+      INSERT INTO orders (
+        order_id, brand, customer_email, customer_name, illustration_url, photo_urls,
+        order_date, production_status, consent_status, computed_score, priority, notes
+      ) VALUES (
+        @order_id, @brand, @customer_email, @customer_name, @illustration_url, @photo_urls,
+        datetime('now'), 'pending', 'pre_approved', 50, 10, 'Added via admin UI'
+      )
+      ON CONFLICT(order_id, brand) DO UPDATE SET
+        customer_email = @customer_email,
+        customer_name = @customer_name,
+        illustration_url = @illustration_url,
+        photo_urls = @photo_urls,
+        updated_at = datetime('now')
+    `);
+    
+    stmt.run({
+      order_id,
+      brand,
+      customer_email: customer_email || '',
+      customer_name: customer_name || '',
+      illustration_url: illustration_url || '',
+      photo_urls: photo_urls ? (typeof photo_urls === 'string' ? photo_urls : JSON.stringify(photo_urls)) : '[]'
+    });
+    
+    res.json({ success: true, message: 'Order added successfully' });
+    db.close();
+  } catch (err) {
+    console.error('Error adding order:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin endpoint to add orders manually
+app.post('/admin/add-order', (req, res) => {
+  const { order_id, brand, customer_email, customer_name, illustration_url, photo_urls } = req.body;
+  
+  if (!order_id || !brand) {
+    return res.status(400).json({ error: 'order_id and brand are required' });
+  }
+
+  try {
+    const db = require('better-sqlite3')(process.env.DB_PATH || require(path.join(PIPELINE_ROOT, 'lib', 'db')).DB_PATH);
+    
+    // Insert or update the order
+    const stmt = db.prepare(`
+      INSERT INTO orders (
+        order_id, brand, customer_email, customer_name, illustration_url, photo_urls,
+        order_date, production_status, consent_status, computed_score, priority, notes
+      ) VALUES (
+        @order_id, @brand, @customer_email, @customer_name, @illustration_url, @photo_urls,
+        datetime('now'), 'pending', 'pre_approved', 50, 10, 'Added via admin UI'
+      )
+      ON CONFLICT(order_id, brand) DO UPDATE SET
+        customer_email = @customer_email,
+        customer_name = @customer_name,
+        illustration_url = @illustration_url,
+        photo_urls = @photo_urls,
+        updated_at = datetime('now')
+    `);
+    
+    stmt.run({
+      order_id,
+      brand,
+      customer_email: customer_email || '',
+      customer_name: customer_name || '',
+      illustration_url: illustration_url || '',
+      photo_urls: photo_urls ? (typeof photo_urls === 'string' ? photo_urls : JSON.stringify(photo_urls)) : '[]'
+    });
+    
+    res.json({ success: true, message: 'Order added successfully' });
+    db.close();
+  } catch (err) {
+    console.error('Error adding order:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Serve admin page for adding orders
+app.get('/admin', (req, res) => {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Order - Video Pipeline</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    button { background: #4f46e5; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #6366f1; }
+    .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .success { background: #d1fae5; color: #065f46; }
+    .error { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <h1>Add New Order</h1>
+  <form id="addOrderForm">
+    <div class="form-group">
+      <label for="orderId">Order ID *</label>
+      <input type="text" id="orderId" required placeholder="e.g., TY-12345">
+    </div>
+    
+    <div class="form-group">
+      <label for="brand">Brand *</label>
+      <select id="brand" required>
+        <option value="turnedyellow">TurnedYellow</option>
+        <option value="makemejedi">MakeMeJedi</option>
+        <option value="turnedwizard">TurnedWizard</option>
+        <option value="turnedcomics">TurnedComics</option>
+        <option value="popsmiths">PopSmiths</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="customerEmail">Customer Email</label>
+      <input type="email" id="customerEmail" placeholder="customer@example.com">
+    </div>
+    
+    <div class="form-group">
+      <label for="customerName">Customer Name</label>
+      <input type="text" id="customerName" placeholder="John Doe">
+    </div>
+    
+    <div class="form-group">
+      <label for="illustrationUrl">Illustration URL</label>
+      <input type="url" id="illustrationUrl" placeholder="https://example.com/illustration.jpg">
+    </div>
+    
+    <div class="form-group">
+      <label for="photoUrls">Photo URLs (one per line)</label>
+      <textarea id="photoUrls" rows="3" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg"></textarea>
+    </div>
+    
+    <button type="submit">Add Order</button>
+  </form>
+  
+  <div id="message"></div>
+  
+  <script>
+    document.getElementById('addOrderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        order_id: document.getElementById('orderId').value,
+        brand: document.getElementById('brand').value,
+        customer_email: document.getElementById('customerEmail').value,
+        customer_name: document.getElementById('customerName').value,
+        illustration_url: document.getElementById('illustrationUrl').value,
+        photo_urls: document.getElementById('photoUrls').value
+          ? document.getElementById('photoUrls').value.split('\\n').filter(url => url.trim())
+          : []
+      };
+      
+      try {
+        const response = await fetch('/admin/add-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        const messageEl = document.getElementById('message');
+        
+        if (response.ok) {
+          messageEl.innerHTML = '<div class="message success">Order added successfully!</div>';
+          document.getElementById('addOrderForm').reset();
+        } else {
+          messageEl.innerHTML = '<div class="message error">Error: ' + (result.error || 'Unknown error') + '</div>';
+        }
+      } catch (err) {
+        document.getElementById('message').innerHTML = '<div class="message error">Network error: ' + err.message + '</div>';
+      }
+    });
+  </script>
+</body>
+</html>`;
+  res.send(html);
+});
+
 // Mount consent public routes (token-based consent flow)
 app.use(consentApp);
 
