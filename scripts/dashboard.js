@@ -1755,7 +1755,8 @@ function renderCard(order, laneId) {
   var showPlay = laneId === 'video_built' || laneId === 'uploaded';
   var score = order.computed_score || order.score || 0;
 
-  var illustrationUrl = order.oms_url || order.illustration_url || order.photos_url || '';
+  var rawUrl = order.oms_url || order.illustration_url || order.photos_url || '';
+  var illustrationUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : '';
   var thumbHtml = illustrationUrl
     ? '<img class="card-thumbnail" src="' + esc(illustrationUrl) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
     : '<div class="card-thumb-placeholder">&#128444;</div>';
