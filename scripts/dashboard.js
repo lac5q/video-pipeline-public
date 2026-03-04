@@ -1096,6 +1096,21 @@ const HTML = `<!DOCTYPE html>
   .detail-table td:first-child { color: var(--text-dim); width: 45%; padding-right: 0.5rem; }
   .panel-loading { color: var(--text-dim); padding: 2rem; text-align: center; }
   .drive-link { word-break: break-all; font-size: 0.82rem; }
+  .panel-illustration-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+  .panel-illustration-img {
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: zoom-in;
+  }
+  .panel-illustration-fallback {
+    display: none;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+  }
 
   /* ── Phase 6: Card action buttons ── */
   .card-actions {
@@ -1737,18 +1752,13 @@ function renderStatusPills() {
 
 // Board rendering
 function renderCard(order, laneId) {
-  var showThumb = laneId === 'candidates';
   var showPlay = laneId === 'video_built' || laneId === 'uploaded';
   var score = order.computed_score || order.score || 0;
 
-  var thumbHtml = '';
-  if (showThumb) {
-    if (order.photos_url) {
-      thumbHtml = '<img class="card-thumbnail" src="' + esc(order.photos_url) + '" alt="" loading="lazy" onerror="this.style.display=\\'none\\'">';
-    } else {
-      thumbHtml = '<div class="card-thumb-placeholder">[img]</div>';
-    }
-  }
+  var illustrationUrl = order.oms_url || order.illustration_url || order.photos_url || '';
+  var thumbHtml = illustrationUrl
+    ? '<img class="card-thumbnail" src="' + esc(illustrationUrl) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+    : '<div class="card-thumb-placeholder">&#128444;</div>';
 
   var brandDisplay = esc(order.brand || '-');
   var customerDisplay = esc(order.description ? order.description.split(' ')[0] : '-');
@@ -1763,7 +1773,7 @@ function renderCard(order, laneId) {
 
   return '<div class="order-card" data-order-id="' + esc(order.order_id) + '" data-brand="' + esc(order.brand) + '">' +
     '<div class="card-top">' +
-    (showThumb ? thumbHtml : '') +
+    thumbHtml +
     '<div class="card-meta">' +
     '<div class="card-order-id">#' + esc(order.order_id) + '</div>' +
     '<div class="card-brand">' + brandDisplay + '</div>' +
@@ -2318,6 +2328,7 @@ function renderPanelContent(data) {
   var order = data.order || {};
   var consentLog = data.consentLog || [];
   var b = order.score_breakdown || {};
+  var illustrationUrl = order.oms_url || order.illustration_url || '';
 
   var orderInfoRows = [
     ['Order ID', '#' + esc(order.order_id)],
@@ -2375,6 +2386,13 @@ function renderPanelContent(data) {
     ? '<p>' + uploadStatusBadge(order) + '</p>' +
       '<a class="drive-link" href="' + esc(order.drive_url) + '" target="_blank" rel="noopener noreferrer">Open in Drive</a>'
     : '<p>' + uploadStatusBadge(order) + '</p><p style="color:var(--text-dim);font-size:0.82rem">No Drive folder yet</p>';
+  var illustrationSection = illustrationUrl
+    ? '<div class="panel-illustration-wrap">' +
+      '<img class="panel-illustration-img" src="' + esc(illustrationUrl) + '" alt="Illustration for order ' + esc(order.order_id || '') + '" loading="lazy" onclick="openLightbox(this.src)" onerror="this.style.display=\\'none\\'; this.nextElementSibling.style.display=\\'block\\';">' +
+      '<div class="panel-illustration-fallback">Preview unavailable for this URL.</div>' +
+      '<a class="drive-link" href="' + esc(illustrationUrl) + '" target="_blank" rel="noopener noreferrer">Open Illustration URL</a>' +
+      '</div>'
+    : '<p style="color:var(--text-dim);font-size:0.82rem">No illustration URL found for this order.</p>';
 
   // Phase 8: Video player section placeholder (populated asynchronously)
   var videoSection = '<div id="video-player-section">' +
@@ -2394,6 +2412,11 @@ function renderPanelContent(data) {
     orderInfoRows.map(function(row) { return '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td></tr>'; }).join('') +
     '</table>' +
     resendButton +
+    '</div>' +
+
+    '<div class="panel-section">' +
+    '<div class="panel-section-title">Illustration</div>' +
+    illustrationSection +
     '</div>' +
 
     '<div class="panel-section">' +
