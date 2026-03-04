@@ -29,6 +29,43 @@ app.use((_req, res, next) => {
 });
 
 // Health check -- unauthenticated, used by Railway
+// POST /api/admin/clean-urls — one-time cleanup of non-URL values in orders table
+app.post('/api/admin/clean-urls', (req, res) => {
+  const db = getDb();
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(orders)').all();
+    const existingColumns = new Set(tableInfo.map(c => c.name));
+
+    const report = [];
+
+    // Delete header rows
+    const HEADER_MARKERS = ['File Name', 'Order ID', 'order_id', 'OrderID'];
+    const placeholders = HEADER_MARKERS.map(() => '?').join(',');
+    const deleted = db.prepare(`DELETE FROM orders WHERE order_id IN (${placeholders})`).run(...HEADER_MARKERS);
+    report.push({ action: 'delete_header_rows', changes: deleted.changes });
+
+    // Null out non-URL values
+    for (const field of ['photos_url', 'oms_url', 'illustration_url']) {
+      if (!existingColumns.has(field)) {
+        report.push({ field, skipped: 'column not found' });
+        continue;
+      }
+      const result = db.prepare(`
+        UPDATE orders SET ${field} = NULL
+        WHERE ${field} IS NOT NULL AND ${field} != ''
+          AND ${field} NOT LIKE 'http://%' AND ${field} NOT LIKE 'https://%'
+      `).run();
+      report.push({ field, cleared: result.changes });
+    }
+
+    res.json({ ok: true, report });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  } finally {
+    db.close();
+  }
+});
+
 app.get('/healthz', (_req, res) => {
   try {
     const db = getDb();
