@@ -2983,6 +2983,7 @@ app.get('/admin', (req, res) => {
 </head>
 <body>
   <h1>Add New Order</h1>
+  <p><a href="https://docs.google.com/spreadsheets/d/1KFToq2s9Pul4e1qQ5UcGP9XR0IIavSaraJbyf-4mJgI/edit?gid=0#gid=0" target="_blank">View TurnedYellow Tracking Spreadsheet</a></p>
   <form id="addOrderForm">
     <div class="form-group">
       <label for="orderId">Order ID *</label>
