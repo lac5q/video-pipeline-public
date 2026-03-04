@@ -2772,13 +2772,13 @@ function copyToClipboard(platform, field) {
   var textToCopy = '';
   
   if (platform === 'youtube') {
-    textToCopy = copy.youtube.description + '\n\nTags: ' + copy.youtube.tags.join(', ');
+    textToCopy = copy.youtube.description + '\\n\\nTags: ' + copy.youtube.tags.join(', ');
   } else if (platform === 'tiktok') {
-    textToCopy = copy.tiktok.caption + '\n\n' + copy.tiktok.hashtags.join(' ');
+    textToCopy = copy.tiktok.caption + '\\n\\n' + copy.tiktok.hashtags.join(' ');
   } else if (platform === 'instagram') {
-    textToCopy = copy.instagram.caption + '\n\n' + copy.instagram.hashtags.join(' ');
+    textToCopy = copy.instagram.caption + '\\n\\n' + copy.instagram.hashtags.join(' ');
   } else if (platform === 'x') {
-    textToCopy = copy.x.tweet + '\n\n' + copy.x.hashtags.join(' ');
+    textToCopy = copy.x.tweet + '\\n\\n' + copy.x.hashtags.join(' ');
   }
   
   // Use Clipboard API
