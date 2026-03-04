@@ -1744,7 +1744,7 @@ function renderCard(order, laneId) {
   var thumbHtml = '';
   if (showThumb) {
     if (order.photos_url) {
-      thumbHtml = '<img class="card-thumbnail" src="' + esc(order.photos_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">';
+      thumbHtml = '<img class="card-thumbnail" src="' + esc(order.photos_url) + '" alt="" loading="lazy" onerror="this.style.display=\\'none\\'">';
     } else {
       thumbHtml = '<div class="card-thumb-placeholder">[img]</div>';
     }
